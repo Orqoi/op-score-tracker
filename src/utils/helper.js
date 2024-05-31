@@ -27,6 +27,9 @@ export const filterGames = async (summoner_id, games, last_date, mode, counts) =
     let current_last_date = last_date;
     while (filteredGames.length < gameCounts && gameCounts > 0) {
         const moreGames = await fetchMatchHistory(summoner_id, current_last_date);
+        if (moreGames.length === 0) {
+            break;
+        }
         current_last_date = moreGames[moreGames.length - 1].created_at;
         filteredGames = filteredGames.concat(moreGames);
         if (filteredGames.length >= gameCounts) {
