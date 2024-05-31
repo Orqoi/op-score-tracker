@@ -79,7 +79,9 @@ function App() {
               <FormControlLabel label="Restrict to latest session" control={<Checkbox checked={recencyFilter} onChange={e => setRecencyFilter(e.target.checked)} />}/>
             </Box>
             <Button variant="contained" size="large" color="primary" onClick={handleSearch} endIcon={<SearchIcon />}>Search</Button>
-            <Typography pt={3} pb={4} color='red'>{loading ? 'Loading...' : result}</Typography>
+            <Box borderRadius={3} bgcolor="#fcfcfc" display="flex" flexDirection="column" boxShadow="0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19)" alignItems="center">
+                <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}  pt={3} pb={4} color='textPrimary'>{loading ? 'Loading...' : result}</Typography>
+            </Box>
           </Box>
         </Box>
     );
