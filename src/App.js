@@ -28,7 +28,8 @@ function App() {
           <Typography align='center' mt={5} variant="h4" component="h1" color="#fcfcfc" fontWeight="bold">
             League of Legends OP Score Tracker
           </Typography>
-          <Box mt={15} borderRadius={3} bgcolor="#fcfcfc" display="flex" flexDirection="column" boxShadow="0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19)" width={400} alignItems="center">
+          <Box mt={15} borderRadius={3} padding={2} bgcolor="#fcfcfc" display="flex" flexDirection="column" 
+            boxShadow="0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19)" width={450} alignItems="center">
             <Box pt={4} maxWidth={250}>
               <InputLabel>Summoner Name</InputLabel>
               <Input startAdornment={<PersonIcon/>} type='text' value={username} onChange={e => setUsername(e.target.value)}/>
@@ -39,11 +40,12 @@ function App() {
             </Box>
             <Box pt={3} minWidth={225}>
                 <FormControl fullWidth>
-                <InputLabel id="mode-select-label">Select Mode</InputLabel>
+                <InputLabel id="mode-select-label">Mode</InputLabel>
                 <Select
                     labelId="mode-select-label"
                     id="mode-select"
                     value={mode}
+                    label="Mode"
                     onChange={e => setMode(e.target.value)}
                 >
                     <MenuItem value="">
@@ -57,11 +59,12 @@ function App() {
             </Box>
             <Box pt={3} minWidth={225}>
                 <FormControl fullWidth>
-                <InputLabel id="mode-select-label">Select Game Number</InputLabel>
+                <InputLabel id="mode-select-label">Number of Games</InputLabel>
                 <Select
                     labelId="mode-select-label"
                     id="count-select"
                     value={counts}
+                    label="Number of Games"
                     onChange={e => setCounts(e.target.value)}
                 >
                     <MenuItem value="">
@@ -79,9 +82,7 @@ function App() {
               <FormControlLabel label="Restrict to latest session" control={<Checkbox checked={recencyFilter} onChange={e => setRecencyFilter(e.target.checked)} />}/>
             </Box>
             <Button variant="contained" size="large" color="primary" onClick={handleSearch} endIcon={<SearchIcon />}>Search</Button>
-            <Box borderRadius={3} bgcolor="#fcfcfc" display="flex" flexDirection="column" boxShadow="0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19)" alignItems="center">
-                <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}  pt={3} pb={4} color='textPrimary'>{loading ? 'Loading...' : result}</Typography>
-            </Box>
+            <Typography variant="body1" style={{ whiteSpace: 'pre-wrap' }}  pt={3} pb={4} color='textPrimary'>{loading ? 'Loading...' : result}</Typography>
           </Box>
         </Box>
     );

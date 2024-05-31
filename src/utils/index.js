@@ -56,19 +56,19 @@ export const getData = async ({username, tag, recencyFilter, counts, mode}) => {
 
         if (winningScoreRanks.length > 0) {
             const averageWinOpScoreRank = (winningScoreRanks.reduce((a, b) => a + b, 0) / winningScoreRanks.length).toFixed(2);
-            winning_index_dec = `Average Winning Rank: ${averageWinOpScoreRank}.\n`;
+            winning_index_dec = `Average Winning Rank: ${averageWinOpScoreRank}.`;
         } else {
             winning_index_dec = "No winning games found.\n";
         }
 
         if (losingScoreRanks.length > 0) {
             const averageLoseOpScoreRank = (losingScoreRanks.reduce((a, b) => a + b, 0) / losingScoreRanks.length).toFixed(2);
-            losing_index_dec = `Average Losing Rank: ${averageLoseOpScoreRank}.\n`;
+            losing_index_dec = `Average Losing Rank: ${averageLoseOpScoreRank}.`;
         } else {
             losing_index_dec = "No losing games found.\n";
         }
         const averageOpScoreRank = (opScoreRanks.reduce((a, b) => a + b, 0) / opScoreRanks.length).toFixed(2);
-        return `Average OP Score Rank for the ${counts} filtered ${mode} games: ${averageOpScoreRank}.\n-${winning_index_dec}\n-${losing_index_dec}`;
+        return `Average OP Score Rank for the ${counts} filtered ${mode} games: ${averageOpScoreRank}.\n${winning_index_dec}\n${losing_index_dec}`;
     } catch (error) {
         console.error(error)
         return 'Error: ' + (error.response?.data?.error || 'An error occurred');
