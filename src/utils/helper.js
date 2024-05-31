@@ -20,7 +20,7 @@ export const filterGames = async (summoner_id, games, last_date, mode, counts) =
             if (mode === "ARAM") {
               return game.queue_info.game_type === mode;
             } else {
-              return game.queue_info.game_type !== "ARAM";
+              return game.queue_info.game_type === "SOLORANKED" || game.queue_info.game_type === "NORMAL" || game.queue_info.game_type === "FLEXRANKED";
             }
           });
     }
