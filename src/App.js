@@ -37,7 +37,7 @@ function App() {
               <InputLabel>Summoner Tag</InputLabel>
               <Input type="text" value={tag} onChange={e => setTag(e.target.value)} startAdornment={<TagIcon/>}/>
             </Box>
-            <Box pt={3} maxWidth={250}>
+            <Box pt={3} minWidth={225}>
                 <FormControl fullWidth>
                 <InputLabel id="mode-select-label">Select Mode</InputLabel>
                 <Select
@@ -55,7 +55,7 @@ function App() {
                 </Select>
                 </FormControl>
             </Box>
-            <Box pt={3} maxWidth={250}>
+            <Box pt={3} minWidth={225}>
                 <FormControl fullWidth>
                 <InputLabel id="mode-select-label">Select Game Number</InputLabel>
                 <Select
