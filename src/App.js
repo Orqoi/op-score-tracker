@@ -1,93 +1,47 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { getData } from './utils';
+import { Input, Typography, InputLabel, Button, Box, Checkbox, FormControlLabel } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import PersonIcon from '@mui/icons-material/Person';
+import TagIcon from '@mui/icons-material/Tag';
+
 
 function App() {
     const [username, setUsername] = useState('');
     const [tag, setTag] = useState('');
     const [recencyFilter, setRecencyFilter] = useState(false);
     const [result, setResult] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async () => {
-      try {
-          const summonerResponse = await axios.get(`/summoner/${username}/${tag}`);
-          const { summonerId } = summonerResponse.data;
-  
-          await axios.post(`/summoner/${summonerId}/renewal`);
-  
-          const matchHistoryResponse = await axios.get(`/matches/${summonerId}`);
-          const games = matchHistoryResponse.data;
-  
-          const sgt = new Date().getTimezoneOffset() * 60000;
-          const now = new Date(Date.now() - sgt).toISOString().split('T')[0];
-  
-          let filteredGames = games;
-  
-          if (recencyFilter) {
-              const latestSession = [];
-              let sessionStartTime = null;
-  
-              for (const game of games) {
-                  const parsedDatetime = new Date(game.created_at);
-                  if (!sessionStartTime) {
-                      sessionStartTime = parsedDatetime;
-                      latestSession.push(game);
-                  } else if (parsedDatetime - sessionStartTime <= 3 * 60 * 60 * 1000) {
-                      latestSession.push(game);
-                  } else {
-                      break;
-                  }
-              }
-  
-              filteredGames = latestSession;
-          } else {
-              const today = new Date().toISOString().split('T')[0];
-              const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-              filteredGames = games.filter(game => {
-                  const gameDate = new Date(game.created_at).toISOString().split('T')[0];
-                  return gameDate === today || gameDate === yesterday;
-              });
-          }
-  
-          if (filteredGames.length === 0) {
-              setResult('No games played today');
-              return;
-          }
-  
-          const opScoreRanks = filteredGames.map(game =>
-              game.participants.find(p => p.summoner.summoner_id === summonerId)?.stats.op_score_rank
-          ).filter(rank => rank !== undefined);
-  
-          if (opScoreRanks.length === 0) {
-              setResult('No OP Score Ranks found for the specified games');
-              return;
-          }
-  
-          const averageOpScoreRank = (opScoreRanks.reduce((a, b) => a + b, 0) / opScoreRanks.length).toFixed(2);
-          setResult(`Average OP Score Rank for the filtered games: ${averageOpScoreRank}`);
-      } catch (error) {
-          setResult('Error: ' + (error.response?.data?.error || 'An error occurred'));
-      }
-  };
+    const handleSearch = async () => {
+      setLoading(true);
+      const data = await getData({username, tag, recencyFilter})
+      setLoading(false);
+      setResult(data)
+    }
   
 
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>OP.GG Average OP Score Rank Calculator</h1>
-            <div>
-                <label>Enter username:</label>
-                <input type="text" value={username} onChange={e => setUsername(e.target.value)} />
-            </div>
-            <div>
-                <label>Enter tag:</label>
-                <input type="text" value={tag} onChange={e => setTag(e.target.value)} />
-            </div>
-            <div>
-                <input type="checkbox" checked={recencyFilter} onChange={e => setRecencyFilter(e.target.checked)} />
-                <label>Enable recency filter</label>
-            </div>
-            <button onClick={handleSubmit}>Calculate</button>
-            <div style={{ marginTop: '20px', color: 'red' }}>{result}</div>
-        </div>
+        <Box display="flex" width="100%" minHeight="100vh" flexDirection="column" alignItems="center" bgcolor="#4287f5">
+          <Typography align='center' mt={5} variant="h4" component="h1" color="#fcfcfc" fontWeight="bold">
+            League of Legends OP Score Tracker
+          </Typography>
+          <Box mt={15} borderRadius={3} bgcolor="#fcfcfc" display="flex" flexDirection="column" boxShadow="0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19)" width={400} alignItems="center">
+            <Box pt={4} maxWidth={250}>
+              <InputLabel>Summoner Name</InputLabel>
+              <Input startAdornment={<PersonIcon/>} type='text' value={username} onChange={e => setUsername(e.target.value)}/>
+            </Box>
+            <Box pt={3} maxWidth={250}>
+              <InputLabel>Summoner Tag</InputLabel>
+              <Input type="text" value={tag} onChange={e => setTag(e.target.value)} startAdornment={<TagIcon/>}/>
+            </Box>
+            <Box pt={3} pb={3}>
+              <FormControlLabel label="Restrict to latest session" control={<Checkbox checked={recencyFilter} onChange={e => setRecencyFilter(e.target.checked)} />}/>
+            </Box>
+            <Button variant="contained" size="large" color="primary" onClick={handleSearch} endIcon={<SearchIcon />}>Search</Button>
+            <Typography pt={3} pb={4} color='red'>{loading ? 'Loading...' : result}</Typography>
+          </Box>
+        </Box>
     );
 }
 
