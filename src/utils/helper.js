@@ -6,8 +6,9 @@ export const fetchSummonerId = async (username, tag) => {
 }
 export const fetchMatchHistory = async (summonerId, last_date) => {
     const url = last_date 
-    ? `/matches/${summonerId}?last_date=${encodeURIComponent(last_date)}`
+    ? `/matches/${summonerId}?ended_at=${encodeURIComponent(last_date)}`
     : `/matches/${summonerId}`;
+    console.log(url)
     const matchHistoryResponse = await axios.get(url);
     return matchHistoryResponse.data;
 }
@@ -30,6 +31,7 @@ export const filterGames = async (summoner_id, games, last_date, mode, counts) =
         if (moreGames.length === 0) {
             break;
         }
+        console.log(current_last_date)
         current_last_date = moreGames[moreGames.length - 1].created_at;
         filteredGames = filteredGames.concat(moreGames);
         if (filteredGames.length >= gameCounts) {

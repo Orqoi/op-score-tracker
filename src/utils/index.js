@@ -42,6 +42,7 @@ export const getData = async ({username, tag, recencyFilter, counts, mode}) => {
         }
 
         const averageOpScoreRank = (opScoreRanks.reduce((a, b) => a + b, 0) / opScoreRanks.length).toFixed(2);
+        console.log(averageOpScoreRank)
         return `Average OP Score Rank for the ${counts} filtered ${mode} games: ${averageOpScoreRank}`;
     } catch (error) {
         return 'Error: ' + (error.response?.data?.error || 'An error occurred');
