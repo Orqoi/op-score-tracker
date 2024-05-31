@@ -32,19 +32,17 @@ export const getData = async ({username, tag, recencyFilter, counts, mode}) => {
         }
 
         const opScoreRanks = filteredGames.map(game =>
-            game.participants.find(p => p.summoner.summoner_id === summonerId)?.stats.op_score_rank
+            game.participants.find(p => p.summoner?.summoner_id === summonerId)?.stats.op_score_rank
         ).filter(rank => rank !== undefined);
-
-        console.log(opScoreRanks);
 
         if (opScoreRanks.length === 0) {
             return 'No OP Score found for the specified games';
         }
 
         const averageOpScoreRank = (opScoreRanks.reduce((a, b) => a + b, 0) / opScoreRanks.length).toFixed(2);
-        console.log(averageOpScoreRank)
         return `Average OP Score Rank for the ${counts} filtered ${mode} games: ${averageOpScoreRank}`;
     } catch (error) {
+        console.error(error)
         return 'Error: ' + (error.response?.data?.error || 'An error occurred');
     }
 };
