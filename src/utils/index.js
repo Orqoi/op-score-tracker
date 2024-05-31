@@ -56,14 +56,14 @@ export const getData = async ({username, tag, recencyFilter, counts, mode}) => {
 
         if (winningScoreRanks.length > 0) {
             const averageWinOpScoreRank = (winningScoreRanks.reduce((a, b) => a + b, 0) / winningScoreRanks.length).toFixed(2);
-            winning_index_dec = `Average Winning Rank: ${averageWinOpScoreRank}.`;
+            winning_index_dec = `Average Winning Rank: ${averageWinOpScoreRank} out of ${winningScoreRanks.length} games.`;
         } else {
             winning_index_dec = "No winning games found.\n";
         }
 
         if (losingScoreRanks.length > 0) {
             const averageLoseOpScoreRank = (losingScoreRanks.reduce((a, b) => a + b, 0) / losingScoreRanks.length).toFixed(2);
-            losing_index_dec = `Average Losing Rank: ${averageLoseOpScoreRank}.`;
+            losing_index_dec = `Average Losing Rank: ${averageLoseOpScoreRank} out of ${losingScoreRanks.length} games.`;
         } else {
             losing_index_dec = "No losing games found.\n";
         }
