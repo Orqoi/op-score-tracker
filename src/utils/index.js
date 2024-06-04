@@ -1,7 +1,8 @@
 import axios from "axios";
 import { fetchSummonerId, fetchMatchHistory, filterGames } from "./fetch-data";
 import { analyseGame } from "./analyse-game";
-import { tierWeightList, tierIndex } from "../constants";
+import { tierWeightList, tierIndex, BASE_URL } from "../constants";
+
 export const getData = async ({
   username,
   tag,
@@ -12,7 +13,7 @@ export const getData = async ({
   try {
     const summonerId = await fetchSummonerId(username, tag);
 
-    await axios.post(`/summoner/${summonerId}/renewal`);
+    await axios.post(`${BASE_URL}/summoner/${summonerId}/renewal`);
 
     const games = await fetchMatchHistory(summonerId, "");
     const last_date = games[games.length - 1].created_at;

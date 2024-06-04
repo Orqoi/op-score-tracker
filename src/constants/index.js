@@ -46,3 +46,5 @@ export const tierIndex = {
   GRANDMASTER: 30,
   CHALLENGER: 31,
 };
+
+export const BASE_URL = process.env.REACT_APP_ENV === 'production' ? process.env.REACT_APP_PROD_URL : process.env.REACT_APP_DEV_URL;

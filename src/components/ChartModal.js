@@ -154,6 +154,7 @@ const ChartModal = ({ open, handleClose, data }) => {
             <Bar dataKey="rank" fill="#82ca9d" />
           </BarChart>
         </Box>
+        {/*
         <Box mb={4} textAlign="center">
           <Typography variant="h6" component="h2" pr={25} gutterBottom sx={{ color: 'grey', fontStyle: 'italic' }}>
             Position-Role to Op_Rank (To be implemented)
@@ -171,7 +172,8 @@ const ChartModal = ({ open, handleClose, data }) => {
             />
             <Bar dataKey="rank" fill="#ffc658" />
           </BarChart>
-        </Box>
+         
+        </Box> */}
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">

@@ -136,14 +136,14 @@ function App() {
         >
           {loading ? "Loading..." : result}
         </Typography>
-        <Button
+        {result && <Button
           variant="contained"
           size="large"
           color="secondary"
           onClick={handleOpenChart}
         >
           Open Charts
-        </Button>
+        </Button>}
       </Box>
       <ChartModal
         open={openChart}

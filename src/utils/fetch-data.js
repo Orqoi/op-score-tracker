@@ -1,13 +1,14 @@
 import axios from "axios";
+import { BASE_URL } from "../constants";
 
 export const fetchSummonerId = async (username, tag) => {
-  const summonerResponse = await axios.get(`/summoner/${username}/${tag}`);
+  const summonerResponse = await axios.get(`${BASE_URL}/summoner/${username}/${tag}`);
   return summonerResponse.data.summonerId;
 };
 export const fetchMatchHistory = async (summonerId, last_date) => {
   const url = last_date
-    ? `/matches/${summonerId}?ended_at=${encodeURIComponent(last_date)}&limit=20&hl=en_US`
-    : `/matches/${summonerId}?limit=20&hl=en_US`;
+    ? `${BASE_URL}/matches/${summonerId}?ended_at=${encodeURIComponent(last_date)}&limit=20&hl=en_US`
+    : `${BASE_URL}/matches/${summonerId}?limit=20&hl=en_US`;
   const matchHistoryResponse = await axios.get(url);
   return matchHistoryResponse.data;
 };
