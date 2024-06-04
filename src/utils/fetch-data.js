@@ -41,10 +41,10 @@ const filterByGameMode = async (summonerId, games, mode) => {
 export const filterGames = async (
   summonerId,
   games,
-  last_date,
   mode,
   counts,
 ) => {
+  const last_date = games[games.length - 1].created_at;
   let filteredGames = await filterByGameMode(summonerId, games, mode);
   let gameCounts = parseInt(counts);
   let current_last_date = last_date;

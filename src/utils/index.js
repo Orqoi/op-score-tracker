@@ -3,6 +3,28 @@ import { fetchSummonerId, fetchMatchHistory, filterGames } from "./fetch-data";
 import { analyseGame } from "./analyse-game";
 import { tierWeightList, tierIndex, BASE_URL } from "../constants";
 
+const filterGamesByLatestSession = (games) => {
+  const THREE_HOURS = 3 * 60 * 60 * 1000
+  const latestSession = [];
+  let sessionStartTime = null;
+
+  for (const game of games) {
+      const parsedDatetime = new Date(game.created_at);
+      if (!sessionStartTime || sessionStartTime - parsedDatetime <= THREE_HOURS) {
+          sessionStartTime = parsedDatetime;
+          latestSession.push(game);
+      } else {
+          break;
+      }
+  }
+
+  return latestSession
+}
+
+const updateMatchHistory = async (summonerId) => {
+  await axios.post(`${BASE_URL}/summoner/${summonerId}/renewal`);
+}
+
 export const getData = async ({
   username,
   tag,
@@ -12,45 +34,21 @@ export const getData = async ({
 }) => {
   try {
     const summonerId = await fetchSummonerId(username, tag);
+    await updateMatchHistory(summonerId);
+    let games = await fetchMatchHistory(summonerId, "");
 
-    await axios.post(`${BASE_URL}/summoner/${summonerId}/renewal`);
-
-    const games = await fetchMatchHistory(summonerId, "");
-    const last_date = games[games.length - 1].created_at;
-
-    const sgt = new Date().getTimezoneOffset() * 60000;
-    const now = new Date(Date.now() - sgt).toISOString().split("T")[0];
-
-    let filteredGames = games;
-
-    filteredGames = await filterGames(
+    games = await filterGames(
       summonerId,
-      filteredGames,
-      last_date,
+      games,
       mode,
       counts,
     );
 
     if (recencyFilter) {
-        const latestSession = [];
-        let sessionStartTime = null;
-
-        for (const game of filteredGames) {
-            const parsedDatetime = new Date(game.created_at);
-            if (!sessionStartTime) {
-                sessionStartTime = parsedDatetime;
-                latestSession.push(game);
-            } else if (parsedDatetime - sessionStartTime <= 3 * 60 * 60 * 1000) {
-                latestSession.push(game);
-            } else {
-                break;
-            }
-        }
-
-        filteredGames = latestSession;
+      games = filterGamesByLatestSession(games)
     }
 
-    if (filteredGames.length === 0) {
+    if (games.length === 0) {
       return "No games played today";
     }
     const opScoreRanks = [];
@@ -59,7 +57,7 @@ export const getData = async ({
     let averageTierIndex = 0;
     let validTierCount = 0;
 
-    filteredGames.forEach((game) => {
+    games.forEach((game) => {
       const participant = game.participants.find(
         (p) => p.summoner?.summoner_id === summonerId,
       );
@@ -107,7 +105,7 @@ export const getData = async ({
       tier = tierWeightList?.[averageTierIndex] || "UNKNOWN";
     }
 
-    let statistics = await analyseGame(filteredGames, summonerId);
+    let statistics = await analyseGame(games, summonerId);
 
     let winning_index_dec = "";
     let losing_index_dec = "";
