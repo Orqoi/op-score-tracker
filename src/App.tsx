@@ -27,6 +27,7 @@ function App() {
   
   const handleSearch = async () => {
     setLoading(true);
+    //@ts-ignore
     const {op_summary, op_statistics } = await getData({ username, tag, recencyFilter, numGames, gameMode });
     setLoading(false);
     setResult(op_summary);
@@ -67,6 +68,7 @@ function App() {
         alignItems="center"
       >
         <Box display="flex" width="90%" alignItems="center">
+          {/*@ts-ignore*/}
           <InputField
             ml={2}
             pr={3}

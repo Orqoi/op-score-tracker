@@ -8,6 +8,7 @@ const filterGamesByLatestSession = (games) => {
 
   for (const game of games) {
       const parsedDatetime = new Date(game.created_at);
+      //@ts-ignore
       if (!sessionStartTime || sessionStartTime - parsedDatetime <= THREE_HOURS) {
           sessionStartTime = parsedDatetime;
           latestSession.push(game);

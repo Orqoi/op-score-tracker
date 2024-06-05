@@ -10,6 +10,8 @@
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "axios": "^1.7.2",
     "concurrently": "^8.2.2",
     "cors": "^2.8.5",
@@ -22,7 +24,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "concurrently \"nodemon src/server/server.js\" \"react-scripts start\"",
+    "start": "concurrently \"nodemon src/server/server.ts\" \"react-scripts start\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -40,8 +42,10 @@
     ]
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.1.3",
-    "nodemon": "^3.1.2"
+    "nodemon": "^3.1.2",
+    "typescript": "^5.4.5"
   }
 }
