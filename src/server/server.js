@@ -48,10 +48,13 @@ app.post("/summoner/:summonerId/renewal", async (req, res) => {
 
 app.get("/matches/:summonerId", async (req, res) => {
   const { summonerId } = req.params;
-  const { ended_at } = req.query;
+  const { ended_at, game_type } = req.query;
   let matchHistoryUrl = `https://lol-web-api.op.gg/api/v1.0/internal/bypass/games/sg/summoners/${summonerId}?&limit=20&hl=en_US`;
   if (ended_at) {
     matchHistoryUrl += `&ended_at=${encodeURIComponent(ended_at)}`;
+  }
+  if (game_type) {
+    matchHistoryUrl += `&game_type=${game_type}`;
   }
   try {
     const matchHistoryResponse = await axios.get(matchHistoryUrl);

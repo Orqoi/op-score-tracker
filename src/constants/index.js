@@ -47,4 +47,24 @@ export const tierIndex = {
   CHALLENGER: 31,
 };
 
+export const gameModeOptions = [
+  { value: "total", label: "ALL" },
+  { value: "aram", label: "ARAM" },
+  { value: "normal", label: "Normal" },
+  { value: "soloranked", label: "Ranked Solo/Duo" },
+  { value: "flexranked", label: "Ranked Flex" },
+  { value: "bot", label: "Co-op vs. AI" },
+  { value: "urf", label: "AR Ultra Rapid Fire" },
+  { value: "clash", label: "Clash" },
+  { value: "nexus_blitz", label: "Nexus Blitz" },
+  { value: "event", label: "Featured" }
+];
+export const numGamesOptions = [
+  { value: 20, label: "20" },
+  { value: 40, label: "40" },
+  { value: 60, label: "60" },
+  { value: 80, label: "80" },
+  { value: 100, label: "100" },
+];
+
 export const BASE_URL = process.env.REACT_APP_ENV === 'production' ? process.env.REACT_APP_PROD_URL : process.env.REACT_APP_DEV_URL;

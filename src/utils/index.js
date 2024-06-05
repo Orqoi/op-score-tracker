@@ -1,7 +1,5 @@
-import axios from "axios";
-import { fetchSummonerId, fetchMatchHistory, filterGames } from "./fetch-data";
-import { analyseGame } from "./analyse-game";
-import { tierWeightList, tierIndex, BASE_URL } from "../constants";
+import { tierWeightList, tierIndex } from "../constants";
+import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
 
 const filterGamesByLatestSession = (games) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
@@ -21,28 +19,119 @@ const filterGamesByLatestSession = (games) => {
   return latestSession
 }
 
-const updateMatchHistory = async (summonerId) => {
-  await axios.post(`${BASE_URL}/summoner/${summonerId}/renewal`);
+function analyseGame(games, summonerId) {
+  let allGames = games;
+  let statistics = [];
+  console.log(allGames.length);
+  for (const game of allGames) {
+    const target = game.participants.find(
+      (p) => p.summoner?.summoner_id === summonerId,
+    );
+    const gameResult = target.stats.result;
+
+    if (gameResult !== "WIN" && gameResult !== "LOSE") {
+      // remake is currently tagged as "UNKNOWN"
+      continue;
+    }
+
+    const rank = target.stats.op_score_rank;
+    const role = target.role;
+    const position = target.position;
+    statistics.push({
+      rank: rank,
+      role: role,
+      position: position,
+      result: gameResult,
+    });
+  }
+  return statistics;
+};
+
+function calculateTierWeight(tierInfo, tierIndex) {
+  if (
+    tierIndex?.[tierInfo.tier] !== undefined &&
+    tierInfo.division !== undefined
+  ) {
+    return (tierIndex[tierInfo.tier] || 0) + ((tierInfo.division ? (5 - tierInfo.division) : 0));
+  }
+  return null;
+}
+
+function processParticipant(participant, opScoreRanks, winningScoreRanks, losingScoreRanks) {
+  const opScoreRank = participant.stats.op_score_rank;
+  if (opScoreRank !== undefined && opScoreRank !== 0) {
+    opScoreRanks.push(opScoreRank);
+    if (participant.stats.result === "WIN") {
+      winningScoreRanks.push(opScoreRank);
+    } else if (participant.stats.result === "LOSE") {
+      losingScoreRanks.push(opScoreRank);
+    }
+  }
+}
+
+function calculateAverageRank(scoreRanks) {
+  if (scoreRanks.length === 0) {
+    return null;
+  }
+  return (
+    scoreRanks.reduce((a, b) => a + b, 0) / scoreRanks.length
+  ).toFixed(2);
+}
+
+function calculateAverageTier(validTierCount, averageTierIndex, tierWeightList) {
+  if (validTierCount > 0) {
+    averageTierIndex = Math.floor(averageTierIndex / validTierCount);
+    return tierWeightList?.[averageTierIndex] || "UNKNOWN";
+  }
+  return "UNKNOWN";
+}
+
+function processGames(games, summonerId, tierIndex) {
+  const opScoreRanks = [];
+  const winningScoreRanks = [];
+  const losingScoreRanks = [];
+  let averageTierIndex = 0;
+  let validTierCount = 0;
+
+  games.forEach((game) => {
+    const participant = game.participants.find(
+      (p) => p.summoner?.summoner_id === summonerId,
+    );
+
+    if (game.average_tier_info?.tier !== undefined) {
+      const tier_weight = calculateTierWeight(game.average_tier_info, tierIndex);
+      if (tier_weight !== null) {
+        validTierCount += 1;
+        averageTierIndex += tier_weight;
+        console.log(game.average_tier_info?.tier, game.average_tier_info?.division, "Tier weight", tier_weight);
+      }
+    }
+
+    if (participant) {
+      processParticipant(participant, opScoreRanks, winningScoreRanks, losingScoreRanks);
+    }
+  });
+
+  return {
+    opScoreRanks,
+    winningScoreRanks,
+    losingScoreRanks,
+    averageTierIndex,
+    validTierCount,
+  };
 }
 
 export const getData = async ({
   username,
   tag,
   recencyFilter,
-  counts,
-  mode,
+  numGames,
+  gameMode,
 }) => {
   try {
     const summonerId = await fetchSummonerId(username, tag);
     await updateMatchHistory(summonerId);
-    let games = await fetchMatchHistory(summonerId, "");
-
-    games = await filterGames(
-      summonerId,
-      games,
-      mode,
-      counts,
-    );
+    let games = await fetchGames(summonerId, numGames, gameMode);
 
     if (recencyFilter) {
       games = filterGamesByLatestSession(games)
@@ -51,85 +140,35 @@ export const getData = async ({
     if (games.length === 0) {
       return "No games played today";
     }
-    const opScoreRanks = [];
-    const winningScoreRanks = [];
-    const losingScoreRanks = [];
-    let averageTierIndex = 0;
-    let validTierCount = 0;
 
-    games.forEach((game) => {
-      const participant = game.participants.find(
-        (p) => p.summoner?.summoner_id === summonerId,
-      );
-
-      if (game.average_tier_info?.tier !== undefined) {
-        // By right, if tier exists, division should exist
-        // To be safe, check if division exists
-        if (
-          tierIndex?.[game.average_tier_info.tier] !== undefined &&
-          game.average_tier_info?.division !== undefined
-        ) {
-          validTierCount += 1;
-          const tier_weight = (tierIndex?.[game.average_tier_info?.tier] || 0) 
-                            + ((game.average_tier_info?.division ? (5 - game.average_tier_info.division) : 0));
-
-          averageTierIndex += tier_weight;
-          console.log(game.average_tier_info?.tier, game.average_tier_info?.division, "Tier weight", tier_weight
-          )
-          
-        }
-      }
-
-      if (participant) {
-        const opScoreRank = participant.stats.op_score_rank;
-        if (opScoreRank !== undefined && opScoreRank !== 0) {
-          opScoreRanks.push(opScoreRank);
-          if (participant.stats.result === "WIN") {
-            winningScoreRanks.push(opScoreRank);
-          } else if (participant.stats.result === "LOSE") {
-            losingScoreRanks.push(opScoreRank);
-          }
-        }
-      }
-    });
+    const {
+      opScoreRanks,
+      winningScoreRanks,
+      losingScoreRanks,
+      averageTierIndex,
+      validTierCount,
+    } = processGames(games, summonerId, tierIndex);
 
     if (opScoreRanks.length === 0) {
       return "No OP Score found for the specified games";
     }
 
-    let tier = "UNKNOWN";
-    // Calculate average tier
-    if (validTierCount > 0) {
-      console.log(validTierCount, averageTierIndex)
-      averageTierIndex = Math.floor(averageTierIndex / validTierCount);
-      tier = tierWeightList?.[averageTierIndex] || "UNKNOWN";
-    }
+    const tier = calculateAverageTier(validTierCount, averageTierIndex, tierWeightList);
 
-    let statistics = await analyseGame(games, summonerId);
+    const statistics = analyseGame(games, summonerId);
 
-    let winning_index_dec = "";
-    let losing_index_dec = "";
+    const averageWinOpScoreRank = calculateAverageRank(winningScoreRanks);
+    const averageLoseOpScoreRank = calculateAverageRank(losingScoreRanks);
+    const averageOpScoreRank = calculateAverageRank(opScoreRanks);
 
-    if (winningScoreRanks.length > 0) {
-      const averageWinOpScoreRank = (
-        winningScoreRanks.reduce((a, b) => a + b, 0) / winningScoreRanks.length
-      ).toFixed(2);
-      winning_index_dec = `Average Winning Rank: ${averageWinOpScoreRank} out of ${winningScoreRanks.length} games.`;
-    } else {
-      winning_index_dec = "No winning games found.\n";
-    }
+    const winning_index_dec = winningScoreRanks.length > 0 
+      ? `Average Winning Rank: ${averageWinOpScoreRank} out of ${winningScoreRanks.length} games.`
+      : "No winning games found.\n";
 
-    if (losingScoreRanks.length > 0) {
-      const averageLoseOpScoreRank = (
-        losingScoreRanks.reduce((a, b) => a + b, 0) / losingScoreRanks.length
-      ).toFixed(2);
-      losing_index_dec = `Average Losing Rank: ${averageLoseOpScoreRank} out of ${losingScoreRanks.length} games.`;
-    } else {
-      losing_index_dec = "No losing games found.\n";
-    }
-    const averageOpScoreRank = (
-      opScoreRanks.reduce((a, b) => a + b, 0) / opScoreRanks.length
-    ).toFixed(2);
+    const losing_index_dec = losingScoreRanks.length > 0 
+      ? `Average Losing Rank: ${averageLoseOpScoreRank} out of ${losingScoreRanks.length} games.`
+      : "No losing games found.\n";
+
     return {
       op_summary: `Average OP Rank: ${averageOpScoreRank}.\n${winning_index_dec}\n${losing_index_dec}\nAverage Tier: ${tier}`,
       op_statistics: statistics,

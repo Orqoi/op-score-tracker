@@ -11,36 +11,26 @@ import SearchIcon from "@mui/icons-material/Search";
 import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
+import { gameModeOptions, numGamesOptions } from "./constants";
 
 function App() {
   const [username, setUsername] = useState("");
   const [tag, setTag] = useState("");
-  const [mode, setMode] = useState("ALL");
-  const [counts, setCounts] = useState("20");
-  const [recencyFilter, setRecencyFilter] = useState(false);
   const [result, setResult] = useState("");
+  const [gameMode, setGameMode] = useState(gameModeOptions[0].value);
+  const [numGames, setNumGames] = useState(20);
+  const [recencyFilter, setRecencyFilter] = useState(false);
   const [loading, setLoading] = useState(false);
   const [openChart, setOpenChart] = useState(false);
   const [statistics, setStatistics] = useState(null);
 
-  const modeOptions = [
-    { value: "ALL", label: "ALL" },
-    { value: "ARAM", label: "ARAM" },
-    { value: "NORMALS", label: "NORMS & RANK" },
-  ];
-  const countOptions = [
-    { value: "20", label: "20" },
-    { value: "40", label: "40" },
-    { value: "60", label: "60" },
-    { value: "80", label: "80" },
-    { value: "100", label: "100" },
-  ];
+  
   const handleSearch = async () => {
     setLoading(true);
-    const data = await getData({ username, tag, recencyFilter, counts, mode });
+    const {op_summary, op_statistics } = await getData({ username, tag, recencyFilter, numGames, gameMode });
     setLoading(false);
-    setResult(data.op_summary);
-    setStatistics(data.op_statistics);
+    setResult(op_summary);
+    setStatistics(op_statistics);
   };
 
   const handleOpenChart = () => setOpenChart(true);
@@ -97,15 +87,15 @@ function App() {
         </Box>
         <SelectInput
           label="Mode"
-          value={mode}
-          onChange={(e) => setMode(e.target.value)}
-          options={modeOptions}
+          value={gameMode}
+          onChange={(e) => setGameMode(e.target.value)}
+          options={gameModeOptions}
         />
         <SelectInput
           label="Number of Games"
-          value={counts}
-          onChange={(e) => setCounts(e.target.value)}
-          options={countOptions}
+          value={numGames}
+          onChange={(e) => setNumGames(e.target.value)}
+          options={numGamesOptions}
         />
         <Box pt={3} pb={3}>
           <FormControlLabel
