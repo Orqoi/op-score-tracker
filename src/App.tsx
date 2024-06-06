@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { getData } from "./utils";
+import { getData, analyseLatestGame } from "./utils";
 import {
   Typography,
   Button,
   Box,
   Checkbox,
   FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AnalyticsIcon from '@mui/icons-material/Analytics';
 import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
@@ -33,6 +35,13 @@ function App() {
     setResult(op_summary);
     setStatistics(op_statistics);
   };
+
+  const handleAnalyze = async () => {
+    setLoading(true);
+    //@ts-ignore
+    const game_stats = await analyseLatestGame({ username, tag });
+    setLoading(false);
+  }
 
   const handleOpenChart = () => setOpenChart(true);
   const handleCloseChart = () => setOpenChart(false);
@@ -110,15 +119,33 @@ function App() {
             }
           />
         </Box>
-        <Button
-          variant="contained"
-          size="large"
-          color="primary"
-          onClick={handleSearch}
-          endIcon={<SearchIcon />}
+        <Box
+          display="flex"
+          flexDirection="row"
+          alignItems="center"
+          gap={4}
         >
-          Search
-        </Button>
+          <Button
+            variant="contained"
+            size="large"
+            color="primary"
+            onClick={handleSearch}
+            endIcon={<SearchIcon />}
+          >
+            Search
+          </Button>
+          <Tooltip title="Analyse your latest Game">
+            <Button
+              variant="contained"
+              size="large"
+              color="secondary"
+              onClick={handleAnalyze}
+              endIcon={<AnalyticsIcon />}
+            >
+              Analyse
+            </Button>
+          </Tooltip>
+        </Box>
         <Typography
           variant="body1"
           style={{ whiteSpace: "pre-wrap" }}

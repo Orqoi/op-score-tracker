@@ -1,5 +1,6 @@
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
+import { Game, MyData, Participant } from "../types/types";
 
 const filterGamesByLatestSession = (games) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
@@ -120,6 +121,49 @@ function processGames(games, summonerId, tierIndex) {
     averageTierIndex,
     validTierCount,
   };
+}
+
+export const analyseLatestGame = async ({
+   username,
+   tag,
+}) => {
+  try {
+    const summonerId = await fetchSummonerId(username, tag);
+    await updateMatchHistory(summonerId);
+    // Retrieve latest game regardless of game type
+    let games = await fetchGames(summonerId, 20, "TOTAL");
+    if (games.length === 0) {
+      return "No games found";
+    }
+    const latestGame: Game = games[0];
+    const participants: Participant[] = latestGame.participants;
+    const selfData: MyData = latestGame.myData
+    const selfTeamKey = selfData.team_key;
+    // TODO: Analyse the enemy team
+    const teammates: Participant[] = participants.filter((p) => p.team_key === selfTeamKey)
+    let statistics = ""
+    for (const teammate of teammates) {
+      // Analyse everyone in the team and find mvp/blame/searched user comment
+      // Potential metric: Damage, Healing/Shielding, KDA, CS, Vision Score, OpScore
+      // Potential Advanced metric: Damage to Gold/Kill ratio to find imposter
+      // more logic: opscore variation in timeline
+      // more logic: relations between roles to stats, e.g. tank with damage taken, controller with cc score
+      // more logic: relations between positions to objectives, e.g. jungler with dragons, support with vision score
+      // more logic: champion types analysis, carry jg performance vs team-oriented jg performance
+
+
+
+    }
+    return statistics;
+  } catch (error) {
+    console.error(error);
+    return "Error: " + (error.response?.data?.error || "An error occurred");
+  }
+}
+
+function analyseGameParticipant(Participant) {
+  
+  return null;
 }
 
 export const getData = async ({
