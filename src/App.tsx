@@ -6,32 +6,39 @@ import {
   Box,
   Checkbox,
   FormControlLabel,
+  type SelectChangeEvent,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
 import { gameModeOptions, numGamesOptions } from "./constants";
+import type { GameMode, OpStatistic } from "./types";
 
 function App() {
   const [username, setUsername] = useState("");
   const [tag, setTag] = useState("");
   const [result, setResult] = useState("");
-  const [gameMode, setGameMode] = useState(gameModeOptions[0].value);
-  const [numGames, setNumGames] = useState(20);
+  const [gameMode, setGameMode] = useState<GameMode>(gameModeOptions[0].value);
+  const [numGames, setNumGames] = useState("20");
   const [recencyFilter, setRecencyFilter] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [openChart, setOpenChart] = useState(false);
-  const [statistics, setStatistics] = useState(null);
+  const [statistics, setStatistics] = useState<OpStatistic[]>([]);
 
   
   const handleSearch = async () => {
+    setError("");
     setLoading(true);
-    //@ts-ignore
-    const {op_summary, op_statistics } = await getData({ username, tag, recencyFilter, numGames, gameMode });
+    const { opSummary, opStatistics, error } = await getData({ username, tag, recencyFilter, numGames: parseInt(numGames, 10), gameMode });
+    if (error) {
+      setError(error);
+    } else if (opSummary && opStatistics) {
+      setResult(opSummary);
+      setStatistics(opStatistics);
+    }
     setLoading(false);
-    setResult(op_summary);
-    setStatistics(op_statistics);
   };
 
   const handleOpenChart = () => setOpenChart(true);
@@ -68,19 +75,19 @@ function App() {
         alignItems="center"
       >
         <Box display="flex" width="90%" alignItems="center">
-          {/*@ts-ignore*/}
           <InputField
             ml={2}
             pr={3}
-            tag="Summoner Name"
+            label="Summoner Name"
+            placeholder="Summoner Name"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
           />
           <InputField
             mr={2}
-            tag="Summoner Tag"
+            label="Summoner Tag"
             value={tag}
-            onChange={(e) => setTag(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTag(e.target.value)}
             display="flex"
             alignItems="center"
             flex={2}
@@ -90,13 +97,14 @@ function App() {
         <SelectInput
           label="Mode"
           value={gameMode}
-          onChange={(e) => setGameMode(e.target.value)}
+          onChange={(e: SelectChangeEvent<string>) => setGameMode(e.target.value as GameMode)}
           options={gameModeOptions}
         />
+
         <SelectInput
           label="Number of Games"
           value={numGames}
-          onChange={(e) => setNumGames(e.target.value)}
+          onChange={(e: SelectChangeEvent<string>) => setNumGames(e.target.value)}
           options={numGamesOptions}
         />
         <Box pt={3} pb={3}>
@@ -105,7 +113,7 @@ function App() {
             control={
               <Checkbox
                 checked={recencyFilter}
-                onChange={(e) => setRecencyFilter(e.target.checked)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRecencyFilter(e.target.checked)}
               />
             }
           />
@@ -126,7 +134,7 @@ function App() {
           pb={4}
           color="textPrimary"
         >
-          {loading ? "Loading..." : result}
+          {loading ? "Loading..." : error.length === 0 ? result : error}
         </Typography>
         {result && <Button
           variant="contained"

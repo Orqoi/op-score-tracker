@@ -1,3 +1,5 @@
+import { GameMode, Tier } from "../types";
+
 export const tierWeightList = {
   1: "Iron4",
   2: "Iron3",
@@ -33,38 +35,37 @@ export const tierWeightList = {
 };
 
 export const tierIndex = {
-  IRON: 0,
-  BRONZE: 4,
-  SILVER: 9,
-  GOLD: 13,
-  PLATINUM: 17,
-  EMERALD: 21,
-  DIAMOND: 24,
-  // Would expect no division value for master, grandmaster, and challenger
-  // Could be wrong 
-  MASTER: 29,
-  GRANDMASTER: 30,
-  CHALLENGER: 31,
+  [Tier.IRON]: 0,
+  [Tier.BRONZE]: 4,
+  [Tier.SILVER]: 9,
+  [Tier.GOLD]: 13,
+  [Tier.PLATINUM]: 17,
+  [Tier.EMERALD]: 21,
+  [Tier.DIAMOND]: 24,
+  [Tier.MASTER]: 29,
+  [Tier.GRANDMASTER]: 30,
+  [Tier.CHALLENGER]: 31,
 };
 
 export const gameModeOptions = [
-  { value: "total", label: "ALL" },
-  { value: "aram", label: "ARAM" },
-  { value: "normal", label: "Normal" },
-  { value: "soloranked", label: "Ranked Solo/Duo" },
-  { value: "flexranked", label: "Ranked Flex" },
-  { value: "bot", label: "Co-op vs. AI" },
-  { value: "urf", label: "AR Ultra Rapid Fire" },
-  { value: "clash", label: "Clash" },
-  { value: "nexus_blitz", label: "Nexus Blitz" },
-  { value: "event", label: "Featured" }
+  { value: GameMode.Total, label: "ALL" },
+  { value: GameMode.Aram, label: "ARAM" },
+  { value: GameMode.Normal, label: "Normal" },
+  { value: GameMode.SoloRanked, label: "Ranked Solo/Duo" },
+  { value: GameMode.FlexRanked, label: "Ranked Flex" },
+  { value: GameMode.Bot, label: "Co-op vs. AI" },
+  { value: GameMode.Urf, label: "AR Ultra Rapid Fire" },
+  { value: GameMode.Clash, label: "Clash" },
+  { value: GameMode.NexusBlitz, label: "Nexus Blitz" },
+  { value: GameMode.Event, label: "Featured" }
 ];
+
 export const numGamesOptions = [
-  { value: 20, label: "20" },
-  { value: 40, label: "40" },
-  { value: 60, label: "60" },
-  { value: 80, label: "80" },
-  { value: 100, label: "100" },
+  { value: "20", label: "20" },
+  { value: "40", label: "40" },
+  { value: "60", label: "60" },
+  { value: "80", label: "80" },
+  { value: "100", label: "100" },
 ];
 
 export const BASE_URL = process.env.REACT_APP_ENV === 'production' ? process.env.REACT_APP_PROD_URL : process.env.REACT_APP_DEV_URL;

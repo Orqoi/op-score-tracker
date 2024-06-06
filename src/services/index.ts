@@ -1,12 +1,13 @@
+import type { GameMode } from "../types";
 import { BASE_URL } from "../constants";
 import axios from "axios";
 
-export const fetchSummonerId = async (username, tag) => {
+export const fetchSummonerId = async (username: string, tag: string) => {
     const summonerResponse = await axios.get(`${BASE_URL}/summoner/${username}/${tag}`);
     return summonerResponse.data.summonerId;
 };
 
-export const fetchGames = async (summonerId, numGames, gameMode) => {
+export const fetchGames = async (summonerId: string, numGames: number, gameMode: GameMode) => {
     let url = `${BASE_URL}/matches/${summonerId}?limit=20&hl=en_US`
     const allGames = [];
     if (gameMode) {
@@ -35,6 +36,6 @@ export const fetchGames = async (summonerId, numGames, gameMode) => {
 };
 
 
-export const updateMatchHistory = async (summonerId) => {
+export const updateMatchHistory = async (summonerId: string) => {
     await axios.post(`${BASE_URL}/summoner/${summonerId}/renewal`);
 }

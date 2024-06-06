@@ -1,3 +1,40 @@
+export enum GameMode {
+  Total = "total",
+  Aram = "aram",
+  Normal = "normal",
+  SoloRanked = "soloranked",
+  FlexRanked = "flexranked",
+  Bot = "bot",
+  Urf = "urf",
+  Clash = "clash",
+  NexusBlitz = "nexus_blitz",
+  Event = "event"
+}
+
+export type TierWeightList = {
+  [key: number]: string;
+} 
+
+export enum Tier {
+  IRON = "IRON",
+  BRONZE = "BRONZE",
+  SILVER = "SILVER",
+  GOLD = "GOLD",
+  PLATINUM = "PLATINUM",
+  EMERALD = "EMERALD",
+  DIAMOND = "DIAMOND",
+  MASTER = "MASTER",
+  GRANDMASTER = "GRANDMASTER",
+  CHALLENGER = "CHALLENGER"
+}
+
+export type OpStatistic = {
+  rank: number,
+  role: string,
+  position: string,
+  result: string,
+}
+
 export interface Game {
   id: string
   created_at: string
@@ -23,7 +60,7 @@ export interface QueueInfo {
 }
 
 export interface AverageTierInfo {
-  tier: string
+  tier: Tier
   division: number
   tier_image_url: string
   border_image_url: string
