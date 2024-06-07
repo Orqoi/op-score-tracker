@@ -1,11 +1,11 @@
 import React from "react";
-import { Box, TextField } from "@mui/material";
+import { Box, TextField, type BoxProps, type TextFieldProps } from "@mui/material";
 
-const InputField = ({ tag, value, onChange, placeholder, ...props }) => {
+const InputField: React.FC<TextFieldProps & BoxProps> = ({ label, value, onChange, placeholder, ...props }) => {
   return (
     <Box pt={4} sx={{ width: "100%", maxWidth: 225 }} {...props}>
       <TextField
-        label={tag}
+        label={label}
         onChange={onChange}
         value={value}
         fullWidth

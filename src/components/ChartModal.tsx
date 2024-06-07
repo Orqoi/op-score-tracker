@@ -17,20 +17,39 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import type { OpStatistic } from "../types";
 
-const ChartModal = ({ open, handleClose, data }) => {
-  const [selectedRankType, setSelectedRankType] = useState("ALL");
+type ChartModalProps = {
+  open: boolean;
+  handleClose: () => void;
+  data: OpStatistic[];
+}
 
-  const handleButtonClick = (rankType) => {
+enum ChartFilter {
+  ALL = "ALL",
+  WIN = "WIN",
+  LOSE = "LOSE"
+}
+
+type GroupedData = {
+  [key: string | number]: OpStatistic[];
+};
+
+const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
+  const [selectedRankType, setSelectedRankType] = useState<ChartFilter>(ChartFilter.ALL);
+
+  const handleButtonClick = (rankType: ChartFilter) => {
     setSelectedRankType(rankType);
   };
 
-  const processData = (groupByKey) => {
+  const processData = (groupByKey: keyof OpStatistic) => {
     if (!data || data.length === 0) return [];
     const filteredData = data.filter((item) => item[groupByKey] !== null);
-    const groupedData = filteredData.reduce((acc, item) => {
+    const groupedData = filteredData.reduce((acc: GroupedData, item) => {
       const key = item[groupByKey];
-      if (!acc[key]) acc[key] = [];
+      if (!acc.key) {
+        acc[key] = [];
+      }
       acc[key].push(item);
       return acc;
     }, {});
@@ -43,12 +62,12 @@ const ChartModal = ({ open, handleClose, data }) => {
     }));
   };
 
-  const processWinLoseData = (groupByKey, result) => {
+  const processWinLoseData = (groupByKey: keyof OpStatistic, result: ChartFilter) => {
     if (!data) return [];
     const filteredData = data.filter(
       (item) => item.result === result && item[groupByKey] !== null,
     );
-    const groupedData = filteredData.reduce((acc, item) => {
+    const groupedData = filteredData.reduce((acc: GroupedData, item) => {
       const key = item[groupByKey];
       if (!acc[key]) acc[key] = [];
       acc[key].push(item);
@@ -63,12 +82,12 @@ const ChartModal = ({ open, handleClose, data }) => {
     }));
   };
 
-  const getChartData = (groupByKey) => {
+  const getChartData = (groupByKey: keyof OpStatistic) => {
     switch (selectedRankType) {
-      case "WIN":
-        return processWinLoseData(groupByKey, "WIN");
-      case "LOSE":
-        return processWinLoseData(groupByKey, "LOSE");
+      case ChartFilter.WIN:
+        return processWinLoseData(groupByKey, ChartFilter.WIN);
+      case ChartFilter.LOSE:
+        return processWinLoseData(groupByKey, ChartFilter.LOSE);
       default:
         return processData(groupByKey);
     }
@@ -76,11 +95,11 @@ const ChartModal = ({ open, handleClose, data }) => {
 
   const positionData = getChartData("position");
   const roleData = getChartData("role");
-  const positionRoleData = getChartData(
-    (item) => `${item.position}-${item.role}`,
-  );
+  // const positionRoleData = getChartData(
+  //   (item) => `${item.position}-${item.role}`,
+  // );
 
-  const renderXAxis = (dataKey) => (
+  const renderXAxis = (dataKey: string) => (
     <XAxis
       dataKey={dataKey}
       tick={{ fontSize: 11 }}
@@ -98,21 +117,21 @@ const ChartModal = ({ open, handleClose, data }) => {
         <Box display="flex" justifyContent="center" mb={4} mr={25}>
           <Button
             variant="contained"
-            onClick={() => handleButtonClick("ALL")}
+            onClick={() => handleButtonClick(ChartFilter.ALL)}
             sx={{ mx: 1 }}
           >
             ALL
           </Button>
           <Button
             variant="contained"
-            onClick={() => handleButtonClick("WIN")}
+            onClick={() => handleButtonClick(ChartFilter.WIN)}
             sx={{ mx: 1 }}
           >
             WIN
           </Button>
           <Button
             variant="contained"
-            onClick={() => handleButtonClick("LOSE")}
+            onClick={() => handleButtonClick(ChartFilter.LOSE)}
             sx={{ mx: 1 }}
           >
             LOSE

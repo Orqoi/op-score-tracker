@@ -1,16 +1,15 @@
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
-import { Game, MyData, Participant } from "../types/types";
+import { AverageTierInfo, Game, GameMode, OpStatistic, Participant, MyData, Tier, TierWeightList } from "../types";
 
-const filterGamesByLatestSession = (games) => {
+const filterGamesByLatestSession = (games: Game[]) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
   const latestSession = [];
   let sessionStartTime = null;
 
   for (const game of games) {
       const parsedDatetime = new Date(game.created_at);
-      //@ts-ignore
-      if (!sessionStartTime || sessionStartTime - parsedDatetime <= THREE_HOURS) {
+      if (!sessionStartTime || sessionStartTime.getTime() - parsedDatetime.getTime() <= THREE_HOURS) {
           sessionStartTime = parsedDatetime;
           latestSession.push(game);
       } else {
@@ -21,14 +20,18 @@ const filterGamesByLatestSession = (games) => {
   return latestSession
 }
 
-function analyseGame(games, summonerId) {
+function analyseGame(games: Game[], summonerId: string): OpStatistic[] {
   let allGames = games;
   let statistics = [];
-  console.log(allGames.length);
   for (const game of allGames) {
     const target = game.participants.find(
-      (p) => p.summoner?.summoner_id === summonerId,
+      (p: Participant) => p.summoner?.summoner_id === summonerId,
     );
+
+    if (!target) {
+      continue;
+    }
+
     const gameResult = target.stats.result;
 
     if (gameResult !== "WIN" && gameResult !== "LOSE") {
@@ -49,7 +52,7 @@ function analyseGame(games, summonerId) {
   return statistics;
 };
 
-function calculateTierWeight(tierInfo, tierIndex) {
+function calculateTierWeight(tierInfo: AverageTierInfo, tierIndex: Record<Tier, number>) {
   if (
     tierIndex?.[tierInfo.tier] !== undefined &&
     tierInfo.division !== undefined
@@ -59,7 +62,7 @@ function calculateTierWeight(tierInfo, tierIndex) {
   return null;
 }
 
-function processParticipant(participant, opScoreRanks, winningScoreRanks, losingScoreRanks) {
+function processParticipant(participant: Participant, opScoreRanks: number[], winningScoreRanks: number[], losingScoreRanks: number[]) {
   const opScoreRank = participant.stats.op_score_rank;
   if (opScoreRank !== undefined && opScoreRank !== 0) {
     opScoreRanks.push(opScoreRank);
@@ -71,16 +74,16 @@ function processParticipant(participant, opScoreRanks, winningScoreRanks, losing
   }
 }
 
-function calculateAverageRank(scoreRanks) {
+function calculateAverageRank(scoreRanks: number[]) {
   if (scoreRanks.length === 0) {
-    return null;
+    return '';
   }
   return (
     scoreRanks.reduce((a, b) => a + b, 0) / scoreRanks.length
   ).toFixed(2);
 }
 
-function calculateAverageTier(validTierCount, averageTierIndex, tierWeightList) {
+function calculateAverageTier(validTierCount: number, averageTierIndex: number, tierWeightList: TierWeightList) {
   if (validTierCount > 0) {
     averageTierIndex = Math.floor(averageTierIndex / validTierCount);
     return tierWeightList?.[averageTierIndex] || "UNKNOWN";
@@ -88,16 +91,16 @@ function calculateAverageTier(validTierCount, averageTierIndex, tierWeightList) 
   return "UNKNOWN";
 }
 
-function processGames(games, summonerId, tierIndex) {
-  const opScoreRanks = [];
-  const winningScoreRanks = [];
-  const losingScoreRanks = [];
+function processGames(games: Game[], summonerId: string, tierIndex: Record<Tier, number>) {
+  const opScoreRanks: number[] = [];
+  const winningScoreRanks: number[] = [];
+  const losingScoreRanks: number[] = [];
   let averageTierIndex = 0;
   let validTierCount = 0;
 
   games.forEach((game) => {
     const participant = game.participants.find(
-      (p) => p.summoner?.summoner_id === summonerId,
+      (p: Participant) => p.summoner?.summoner_id === summonerId,
     );
 
     if (game.average_tier_info?.tier !== undefined) {
@@ -105,7 +108,6 @@ function processGames(games, summonerId, tierIndex) {
       if (tier_weight !== null) {
         validTierCount += 1;
         averageTierIndex += tier_weight;
-        console.log(game.average_tier_info?.tier, game.average_tier_info?.division, "Tier weight", tier_weight);
       }
     }
 
@@ -126,12 +128,15 @@ function processGames(games, summonerId, tierIndex) {
 export const analyseLatestGame = async ({
    username,
    tag,
+}: {
+  username: string,
+  tag: string
 }) => {
   try {
     const summonerId = await fetchSummonerId(username, tag);
     await updateMatchHistory(summonerId);
     // Retrieve latest game regardless of game type
-    let games = await fetchGames(summonerId, 20, "TOTAL");
+    let games = await fetchGames(summonerId, 20, GameMode.Total);
     if (games.length === 0) {
       return "No games found";
     }
@@ -155,15 +160,28 @@ export const analyseLatestGame = async ({
 
     }
     return statistics;
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
     return "Error: " + (error.response?.data?.error || "An error occurred");
   }
 }
 
-function analyseGameParticipant(Participant) {
-  
+function analyseGameParticipant(participant: Participant) {
   return null;
+}
+
+type GetDataParams = {
+  username: string;
+  tag: string;
+  recencyFilter: boolean;
+  numGames: number;
+  gameMode: GameMode;
+}
+
+type GetDataResult = {
+  opSummary?: string;
+  opStatistics?: OpStatistic[];
+  error?: string;
 }
 
 export const getData = async ({
@@ -172,18 +190,20 @@ export const getData = async ({
   recencyFilter,
   numGames,
   gameMode,
-}) => {
+}: GetDataParams): Promise<GetDataResult> => {
   try {
-    const summonerId = await fetchSummonerId(username, tag);
+    const summonerId: string = await fetchSummonerId(username, tag);
     await updateMatchHistory(summonerId);
-    let games = await fetchGames(summonerId, numGames, gameMode);
+    let games: Game[] = await fetchGames(summonerId, numGames, gameMode);
 
     if (recencyFilter) {
-      games = filterGamesByLatestSession(games)
+      games = filterGamesByLatestSession(games);
     }
 
     if (games.length === 0) {
-      return "No games played today";
+      return {
+        error: "No games played"
+      }
     }
 
     const {
@@ -192,34 +212,38 @@ export const getData = async ({
       losingScoreRanks,
       averageTierIndex,
       validTierCount,
-    } = processGames(games, summonerId, tierIndex);
+    } = processGames(games, summonerId, tierIndex); // Adjust types as needed
 
     if (opScoreRanks.length === 0) {
-      return "No OP Score found for the specified games";
+      return {
+        error: "No OP Score found for the specified games"
+      }
     }
 
-    const tier = calculateAverageTier(validTierCount, averageTierIndex, tierWeightList);
+    const tier: string = calculateAverageTier(validTierCount, averageTierIndex, tierWeightList);
 
-    const statistics = analyseGame(games, summonerId);
+    const statistics: OpStatistic[] = analyseGame(games, summonerId);
 
-    const averageWinOpScoreRank = calculateAverageRank(winningScoreRanks);
-    const averageLoseOpScoreRank = calculateAverageRank(losingScoreRanks);
-    const averageOpScoreRank = calculateAverageRank(opScoreRanks);
+    const averageWinOpScoreRank: string = calculateAverageRank(winningScoreRanks);
+    const averageLoseOpScoreRank: string = calculateAverageRank(losingScoreRanks);
+    const averageOpScoreRank: string = calculateAverageRank(opScoreRanks);
 
-    const winning_index_dec = winningScoreRanks.length > 0 
+    const winning_index_dec: string = winningScoreRanks.length > 0 
       ? `Average Winning Rank: ${averageWinOpScoreRank} out of ${winningScoreRanks.length} games.`
-      : "No winning games found.\n";
+      : "No winning games found.";
 
-    const losing_index_dec = losingScoreRanks.length > 0 
+    const losing_index_dec: string = losingScoreRanks.length > 0 
       ? `Average Losing Rank: ${averageLoseOpScoreRank} out of ${losingScoreRanks.length} games.`
-      : "No losing games found.\n";
+      : "No losing games found.";
 
     return {
-      op_summary: `Average OP Rank: ${averageOpScoreRank}.\n${winning_index_dec}\n${losing_index_dec}\nAverage Tier: ${tier}`,
-      op_statistics: statistics,
+      opSummary: `Average OP Rank: ${averageOpScoreRank}.\n${winning_index_dec}\n${losing_index_dec}\nAverage Tier: ${tier}`,
+      opStatistics: statistics,
     };
   } catch (error) {
-    console.error(error);
-    return "Error: " + (error.response?.data?.error || "An error occurred");
+    console.error(error)
+    return {
+      error: "Failed to get data; refer to console for more details"
+    }
   }
 };

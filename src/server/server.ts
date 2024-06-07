@@ -1,7 +1,10 @@
-const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
-const path = require("path");
+import type { Request, Response } from "express";
+import type { Game } from "../types";
+import type { AxiosError } from "axios";
+import express from "express";
+import axios from "axios";
+import cors from "cors";
+import path from "path";
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -11,7 +14,7 @@ app.use(express.json());
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, "build")));
 
-app.get("/summoner/:username/:tag", async (req, res) => {
+app.get("/summoner/:username/:tag", async (req: Request, res: Response) => {
   const { username, tag } = req.params;
   const getSummonerIdUrl = `https://www.op.gg/summoners/sg/${username}-${tag}`;
   try {
@@ -21,54 +24,56 @@ app.get("/summoner/:username/:tag", async (req, res) => {
     );
     if (scriptTag) {
       const data = JSON.parse(scriptTag[1]);
-      const summonerId = data.props.pageProps.data.summoner_id;
+      const summonerId: string = data.props.pageProps.data.summoner_id;
       res.json({ summonerId });
     } else {
       res.status(404).json({ error: "User does not exist" });
     }
   } catch (error) {
-    res
-      .status(error.response?.status || 500)
+    const axiosError = error as AxiosError;
+    res.status(axiosError.response?.status || 500)
       .json({ error: "An error occurred" });
   }
 });
 
-app.post("/summoner/:summonerId/renewal", async (req, res) => {
+app.post("/summoner/:summonerId/renewal", async (req: Request, res: Response) => {
   const { summonerId } = req.params;
   const renewalUrl = `https://lol-web-api.op.gg/api/v1.0/internal/bypass/summoners/sg/${summonerId}/renewal`;
   try {
     await axios.post(renewalUrl);
     res.status(200).json({ message: "Renewal successful" });
   } catch (error) {
-    res
-      .status(error.response?.status || 500)
-      .json({ error: "An error occurred" });
+    const axiosError = error as AxiosError;
+    res.status(axiosError.response?.status || 500).json({
+      error: "An error occurred",
+    });
   }
 });
 
-app.get("/matches/:summonerId", async (req, res) => {
+app.get("/matches/:summonerId", async (req: Request, res: Response) => {
   const { summonerId } = req.params;
   const { ended_at, game_type } = req.query;
   let matchHistoryUrl = `https://lol-web-api.op.gg/api/v1.0/internal/bypass/games/sg/summoners/${summonerId}?&limit=20&hl=en_US`;
   if (ended_at) {
-    matchHistoryUrl += `&ended_at=${encodeURIComponent(ended_at)}`;
+    matchHistoryUrl += `&ended_at=${encodeURIComponent(String(ended_at))}`;
   }
   if (game_type) {
     matchHistoryUrl += `&game_type=${game_type}`;
   }
   try {
     const matchHistoryResponse = await axios.get(matchHistoryUrl);
-    const games = matchHistoryResponse.data.data;
+    const games: Game[] = matchHistoryResponse.data.data;
     res.json(games);
   } catch (error) {
-    res
-      .status(error.response?.status || 500)
-      .json({ error: "An error occurred" });
+    const axiosError = error as AxiosError; // Asserting error as AxiosError type
+    res.status(axiosError.response?.status || 500).json({
+      error: "An error occurred",
+    });
   }
 });
 
 // The "catchall" handler: for any request that doesn't match one above, send back React's index.html file.
-app.get("*", (req, res) => {
+app.get("*", (_: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
