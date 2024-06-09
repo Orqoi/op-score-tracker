@@ -66,6 +66,11 @@ export const numGamesOptions = [
   { value: "60", label: "60" },
   { value: "80", label: "80" },
   { value: "100", label: "100" },
+  { value: "120", label: "120" },
+  { value: "140", label: "140" },
+  { value: "160", label: "160" },
+  { value: "180", label: "180" },
+  { value: "200", label: "200" },
 ];
 
 export const BASE_URL = process.env.REACT_APP_ENV === 'production' ? process.env.REACT_APP_PROD_URL : process.env.REACT_APP_DEV_URL;
