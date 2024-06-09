@@ -16,13 +16,16 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  LineChart,
+  Line,
 } from "recharts";
-import type { OpStatistic } from "../types";
+import type { OpScoreTimelineStatistics, OpStatistic } from "../types";
 
 type ChartModalProps = {
   open: boolean;
   handleClose: () => void;
   data: OpStatistic[];
+  timeAverages: OpScoreTimelineStatistics[];
 }
 
 enum ChartFilter {
@@ -35,7 +38,7 @@ type GroupedData = {
   [key: string | number]: OpStatistic[];
 };
 
-const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
+const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data, timeAverages }) => {
   const [selectedRankType, setSelectedRankType] = useState<ChartFilter>(ChartFilter.ALL);
 
   const handleButtonClick = (rankType: ChartFilter) => {
@@ -93,6 +96,35 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
     }
   };
 
+  const renderTimeline = () => {
+    switch (selectedRankType) {
+      case ChartFilter.WIN:
+        return <Line dataKey="winScore" stroke="#00aaff" />
+      case ChartFilter.LOSE:
+        return <Line dataKey="loseScore" stroke="#ff0000" />
+      default:
+        return <Line dataKey="score" stroke="#000000" />
+    }          
+  }
+
+  function formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  const renderTimelineLabel = (label: any, payload: any) => {
+   
+    switch (selectedRankType) {
+      case ChartFilter.WIN:
+        return `${formatTime(Number(payload[0]?.payload?.second))} - ${payload[0]?.payload?.winCount} games`
+      case ChartFilter.LOSE:
+        return `${formatTime(Number(payload[0]?.payload?.second))} - ${payload[0]?.payload?.loseCount} games`
+      default:
+        return `${formatTime(Number(payload[0]?.payload?.second))} - ${payload[0]?.payload?.totalCount} games`
+    }          
+  }
+
   const positionData = getChartData("position");
   const roleData = getChartData("role");
   // const positionRoleData = getChartData(
@@ -103,10 +135,6 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
     <XAxis
       dataKey={dataKey}
       tick={{ fontSize: 11 }}
-      interval={0}
-      angle={-15}
-      textAnchor="end"
-      label={{ value: dataKey, position: "insideRight", offset: -10 }}
     />
   );
 
@@ -141,15 +169,15 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
           <Typography variant="h6" component="h2" pr={25} gutterBottom sx={{ color: 'grey', fontStyle: 'italic' }}>
             Position - Op_Rank Chart
           </Typography>
-          <BarChart width={600} height={320} data={positionData}>
+          <BarChart width={1000} height={320} data={positionData}>
             <CartesianGrid strokeDasharray="3 3" />
             {renderXAxis("position")}
             <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
             <Tooltip />
             <Legend
               layout="vertical"
-              align="right"
-              verticalAlign="top"
+              align="center"
+              verticalAlign="bottom"
               wrapperStyle={{ paddingLeft: 20, paddingTop: 20 }}
             />
             <Bar dataKey="rank" fill="#8884d8" />
@@ -159,15 +187,15 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
           <Typography variant="h6" component="h2" pr={25} gutterBottom sx={{ color: 'grey', fontStyle: 'italic' }}>
             Role - Op_Rank Chart
           </Typography>
-          <BarChart width={600} height={320} data={roleData}>
+          <BarChart width={1000} height={320} data={roleData}>
             <CartesianGrid strokeDasharray="3 3" />
             {renderXAxis("role")}
             <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
             <Tooltip />
             <Legend
               layout="vertical"
-              align="right"
-              verticalAlign="top"
+              align="center"
+              verticalAlign="bottom"
               wrapperStyle={{ paddingLeft: 20, paddingTop: 20 }}
             />
             <Bar dataKey="rank" fill="#82ca9d" />
@@ -193,6 +221,27 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data }) => {
           </BarChart>
          
         </Box> */}
+        <Box mb={4} textAlign="center">
+          <Typography variant="h6" component="h2" pr={25} gutterBottom sx={{ color: 'grey', fontStyle: 'italic' }}>
+            Game Time Average - Op_Rank Chart
+          </Typography>
+          <LineChart width={1000} height={320} data={timeAverages}>
+            <CartesianGrid strokeDasharray="3" />
+            <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} />
+            <XAxis tickFormatter={() => ""} interval={0} />
+            <Legend
+              layout="vertical"
+              align="center"
+              verticalAlign="bottom"
+              wrapperStyle={{ paddingLeft: 20, paddingTop: 20 }}
+            />
+            <Tooltip 
+              labelFormatter={(label, payload) => renderTimelineLabel(label, payload)}
+              formatter={(value, name) => [<>Average OP Score Placement: {Number(value).toFixed(2)}</>]}
+            />
+            {renderTimeline()}
+          </LineChart>
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
