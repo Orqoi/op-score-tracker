@@ -13,7 +13,7 @@ import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
 import { gameModeOptions, numGamesOptions } from "./constants";
-import type { GameMode, OpStatistic } from "./types";
+import type { GameMode, OpScoreTimelineStatistics, OpStatistic } from "./types";
 
 function App() {
   const [username, setUsername] = useState("");
@@ -26,17 +26,19 @@ function App() {
   const [error, setError] = useState("");
   const [openChart, setOpenChart] = useState(false);
   const [statistics, setStatistics] = useState<OpStatistic[]>([]);
+  const [timeAverages, setTimeAverages] = useState<OpScoreTimelineStatistics[]>([]);
 
   
   const handleSearch = async () => {
     setError("");
     setLoading(true);
-    const { opSummary, opStatistics, error } = await getData({ username, tag, recencyFilter, numGames: parseInt(numGames, 10), gameMode });
+    const { opSummary, opStatistics, opTimeAverages, error } = await getData({ username, tag, recencyFilter, numGames: parseInt(numGames, 10), gameMode });
     if (error) {
       setError(error);
-    } else if (opSummary && opStatistics) {
+    } else if (opSummary && opStatistics && opTimeAverages) {
       setResult(opSummary);
       setStatistics(opStatistics);
+      setTimeAverages(opTimeAverages);
     }
     setLoading(false);
   };
@@ -149,6 +151,7 @@ function App() {
         open={openChart}
         handleClose={handleCloseChart}
         data={statistics}
+        timeAverages={timeAverages}
       />
     </Box>
   );
