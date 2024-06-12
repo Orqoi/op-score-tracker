@@ -14,8 +14,9 @@ import AnalyticsIcon from '@mui/icons-material/Analytics';
 import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
+import AnalysisModal from "./components/AnalysisModal";
 import { gameModeOptions, numGamesOptions } from "./constants";
-import type { GameMode, OpScoreTimelineStatistics, OpStatistic } from "./types";
+import type { GameMode, OpScoreTimelineStatistics, OpStatistic, AnalysisStats } from "./types";
 
 function App() {
   const [username, setUsername] = useState("");
@@ -29,6 +30,8 @@ function App() {
   const [openChart, setOpenChart] = useState(false);
   const [statistics, setStatistics] = useState<OpStatistic[]>([]);
   const [timeAverages, setTimeAverages] = useState<OpScoreTimelineStatistics[]>([]);
+  const [openAnalysis, setOpenAnalysis] = useState(false);
+  const [analysisStats, setAnalysisStats] = useState([] as AnalysisStats[]);
 
   
   const handleSearch = async () => {
@@ -45,15 +48,17 @@ function App() {
     setLoading(false);
   };
 
-  const handleAnalyze = async () => {
-    setLoading(true);
-    //@ts-ignore
-    const game_stats = await analyseLatestGame({ username, tag });
-    setLoading(false);
-  }
 
   const handleOpenChart = () => setOpenChart(true);
   const handleCloseChart = () => setOpenChart(false);
+  const handleAnalyze = async () => {
+    const analysisStats = await analyseLatestGame(username,tag)
+    setAnalysisStats(analysisStats);
+    setOpenAnalysis(true);
+    console.log(analysisStats)
+  }
+
+  const handleAnalyzeClose = () => setOpenAnalysis(false);
 
   return (
     <Box
@@ -179,6 +184,11 @@ function App() {
         handleClose={handleCloseChart}
         data={statistics}
         timeAverages={timeAverages}
+      />
+      <AnalysisModal
+        open={openAnalysis}
+        handleClose={handleAnalyzeClose}
+        data={analysisStats}
       />
     </Box>
   );

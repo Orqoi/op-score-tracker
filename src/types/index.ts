@@ -237,5 +237,5 @@ export interface AnalysisStats {
   wardRatio: number;
   wardKillRatio: number;
   visionWardRatio: number;
-  damagePerGoldRanking: number;
+  damagePerGold: number;
 }

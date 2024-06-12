@@ -214,20 +214,17 @@ function processGames(games: Game[], summonerId: string, tierIndex: Record<Tier,
   };
 }
 
-export const analyseLatestGame = async ({
-   username,
-   tag,
-}: {
-  username: string,
-  tag: string
-}) => {
+export const analyseLatestGame = async (
+   username: string,
+   tag:string,
+) : Promise<AnalysisStats[]> => {
   try {
     const summonerId = await fetchSummonerId(username, tag);
     await updateMatchHistory(summonerId);
     // Retrieve latest game regardless of game type
     let games = await fetchGames(summonerId, 20, GameMode.Total);
     if (games.length === 0) {
-      return "No games found";
+      return [];
     }
     const latestGame: Game = games[0];
     console.log(latestGame)
@@ -243,14 +240,13 @@ export const analyseLatestGame = async ({
     teammates.forEach((teammate) => {
       allAnaylsisStats.push(collectParticipantInfo(teammate, teamStat, partialStats))
     });
-    postProcessAnalysisStats(allAnaylsisStats);
-    return statistics;
+    return allAnaylsisStats;
   } catch (error: unknown) {
     console.error(error);
     if (error instanceof AxiosError) {
-      return "Error: " + (error.response?.data?.error || "An error occurred");
+      return []
     } else {
-      return "Error: " + error;
+      return []
     }
     
   }
@@ -277,29 +273,11 @@ function sumStats(participants: Participant[]): Partial<Stats> {
   return summedInstance;
 }
 
-function postProcessAnalysisStats(allAnalysisStats: AnalysisStats[]) {
-  // Get damage per gold ranking
-  allAnalysisStats
-  .sort((a, b) => (b.baseStats.total_damage_dealt_to_champions 
-    / (b.baseStats.gold_earned == 0 ? 1 : b.baseStats.gold_earned))
-   - (a.baseStats.total_damage_dealt_to_champions 
-    / (a.baseStats.gold_earned == 0 ? 1 : a.baseStats.gold_earned)))
-  .forEach((stats, index) => {
-    stats.damagePerGoldRanking = index + 1; // Ranking starts from 1
-  });
-
-  allAnalysisStats
-    .sort((a, b) => b.baseStats.gold_earned - a.baseStats.gold_earned)
-    .forEach((stats, index) => {
-      stats.goldRanking = index + 1; // Ranking starts from 1
-    });
-}
-
 
 function collectParticipantInfo(participant: Participant, teamStat: Team | undefined, partialStats: Partial<Stats>) : AnalysisStats {
   const stats = participant.stats;
   return {
-    summonerName: participant.summoner.summoner_id,
+    summonerName: participant.summoner.game_name,
     baseStats: stats,
     assistRatio: (partialStats.assist != undefined) ? stats.assist / partialStats.assist : -1,
     damageObjRatio: (partialStats.damage_dealt_to_objectives != undefined) ? stats.damage_dealt_to_objectives / partialStats.damage_dealt_to_objectives : -1,
@@ -320,7 +298,7 @@ function collectParticipantInfo(participant: Participant, teamStat: Team | undef
     wardKillRatio: (partialStats.ward_kill != undefined) ? stats.ward_kill / partialStats.ward_kill : -1,
     visionWardRatio: (partialStats.vision_wards_bought_in_game != undefined) ? stats.vision_wards_bought_in_game / partialStats.vision_wards_bought_in_game : -1,
     // temporary initialized to damage per gold
-    damagePerGoldRanking: -1,
+    damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt / stats.gold_earned : -1,
     goldRanking: -1,
   }
 }
