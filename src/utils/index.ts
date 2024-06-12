@@ -1,6 +1,7 @@
+import { Axios, AxiosError } from "axios";
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
-import { AverageTierInfo, Game, GameMode, OpStatistic, Participant, MyData, Tier, TierWeightList } from "../types";
+import { AverageTierInfo, Game, GameMode, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
 
 const filterGamesByLatestSession = (games: Game[]) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
@@ -141,33 +142,99 @@ export const analyseLatestGame = async ({
       return "No games found";
     }
     const latestGame: Game = games[0];
+    console.log(latestGame)
     const participants: Participant[] = latestGame.participants;
     const selfData: MyData = latestGame.myData
     const selfTeamKey = selfData.team_key;
+    const teamStat: Team | undefined = latestGame.teams.find((t) => t.key === selfTeamKey);
     // TODO: Analyse the enemy team
     const teammates: Participant[] = participants.filter((p) => p.team_key === selfTeamKey)
+    const partialStats: Partial<Stats> = sumStats(teammates);
     let statistics = ""
-    for (const teammate of teammates) {
-      // Analyse everyone in the team and find mvp/blame/searched user comment
-      // Potential metric: Damage, Healing/Shielding, KDA, CS, Vision Score, OpScore
-      // Potential Advanced metric: Damage to Gold/Kill ratio to find imposter
-      // more logic: opscore variation in timeline
-      // more logic: relations between roles to stats, e.g. tank with damage taken, controller with cc score
-      // more logic: relations between positions to objectives, e.g. jungler with dragons, support with vision score
-      // more logic: champion types analysis, carry jg performance vs team-oriented jg performance
-
-
-
-    }
+    let allAnaylsisStats: AnalysisStats[] = [];
+    teammates.forEach((teammate) => {
+      allAnaylsisStats.push(collectParticipantInfo(teammate, teamStat, partialStats))
+    });
+    postProcessAnalysisStats(allAnaylsisStats);
     return statistics;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(error);
-    return "Error: " + (error.response?.data?.error || "An error occurred");
+    if (error instanceof AxiosError) {
+      return "Error: " + (error.response?.data?.error || "An error occurred");
+    } else {
+      return "Error: " + error;
+    }
+    
   }
 }
 
-function analyseGameParticipant(participant: Participant) {
-  return null;
+function sumStats(participants: Participant[]): Partial<Stats> {
+  const instances = participants.map((p) => p.stats);
+  const summedInstance: Partial<Stats> = {};
+
+  instances.forEach(instance => {
+    for (const key in instance) {
+      if (instance.hasOwnProperty(key)) {
+        const typedKey = key as keyof Stats;
+        if (typeof instance[typedKey] === 'number') {
+          if (!summedInstance[typedKey]) {
+            summedInstance[typedKey] = 0;
+          }
+          summedInstance[typedKey] = (summedInstance[typedKey] as number) + instance[typedKey];
+        }
+      }
+    }
+  });
+
+  return summedInstance;
+}
+
+function postProcessAnalysisStats(allAnalysisStats: AnalysisStats[]) {
+  // Get damage per gold ranking
+  allAnalysisStats
+  .sort((a, b) => (b.baseStats.total_damage_dealt_to_champions 
+    / (b.baseStats.gold_earned == 0 ? 1 : b.baseStats.gold_earned))
+   - (a.baseStats.total_damage_dealt_to_champions 
+    / (a.baseStats.gold_earned == 0 ? 1 : a.baseStats.gold_earned)))
+  .forEach((stats, index) => {
+    stats.damagePerGoldRanking = index + 1; // Ranking starts from 1
+  });
+
+  allAnalysisStats
+    .sort((a, b) => b.baseStats.gold_earned - a.baseStats.gold_earned)
+    .forEach((stats, index) => {
+      stats.goldRanking = index + 1; // Ranking starts from 1
+    });
+}
+
+
+function collectParticipantInfo(participant: Participant, teamStat: Team | undefined, partialStats: Partial<Stats>) : AnalysisStats {
+  const stats = participant.stats;
+  return {
+    summonerName: participant.summoner.summoner_id,
+    baseStats: stats,
+    assistRatio: (partialStats.assist != undefined) ? stats.assist / partialStats.assist : -1,
+    damageObjRatio: (partialStats.damage_dealt_to_objectives != undefined) ? stats.damage_dealt_to_objectives / partialStats.damage_dealt_to_objectives : -1,
+    damageTurretRatio: (partialStats.damage_dealt_to_turrets != undefined) ? stats.damage_dealt_to_turrets / partialStats.damage_dealt_to_turrets : -1,
+    damageSelfMitigatedRatio: (partialStats.damage_self_mitigated != undefined) ? stats.damage_self_mitigated / partialStats.damage_self_mitigated : -1,
+    deathRatio: (partialStats.death != undefined) ? stats.death / partialStats.death : -1,
+    killRatio: (partialStats.kill != undefined) ? stats.kill / partialStats.kill : -1,
+    minionRatio: (partialStats.minion_kill != undefined) ? stats.minion_kill / partialStats.minion_kill : -1,
+    neturalRatio: (partialStats.neutral_minion_kill != undefined) ? stats.neutral_minion_kill / partialStats.neutral_minion_kill : -1,
+    neturalEnemyRatio: (partialStats.neutral_minion_kill_enemy_jungle != undefined) ? stats.neutral_minion_kill_enemy_jungle / partialStats.neutral_minion_kill_enemy_jungle : -1,
+    neturalTeamRatio: (partialStats.neutral_minion_kill_team_jungle != undefined) ? stats.neutral_minion_kill_team_jungle / partialStats.neutral_minion_kill_team_jungle : -1,
+    totalDamageToChampRatio: (partialStats.total_damage_dealt_to_champions != undefined) ? stats.total_damage_dealt_to_champions / partialStats.total_damage_dealt_to_champions : -1,
+    totalDamageTakenRatio: (partialStats.total_damage_taken != undefined) ? stats.total_damage_taken / partialStats.total_damage_taken : -1,
+    totalHealRatio: (partialStats.total_heal != undefined) ? stats.total_heal / partialStats.total_heal : -1,
+    turretKillRatio: (partialStats.turret_kill != undefined) ? stats.turret_kill / partialStats.turret_kill : -1,
+    visionScoreRatio: (partialStats.vision_score != undefined) ? stats.vision_score / partialStats.vision_score : -1,
+    wardRatio: (partialStats.ward_place != undefined) ? stats.ward_place / partialStats.ward_place : -1,
+    wardKillRatio: (partialStats.ward_kill != undefined) ? stats.ward_kill / partialStats.ward_kill : -1,
+    visionWardRatio: (partialStats.vision_wards_bought_in_game != undefined) ? stats.vision_wards_bought_in_game / partialStats.vision_wards_bought_in_game : -1,
+    // temporary initialized to damage per gold
+    damagePerGoldRanking: -1,
+    goldRanking: -1,
+  }
 }
 
 type GetDataParams = {

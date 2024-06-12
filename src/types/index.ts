@@ -204,3 +204,28 @@ export interface MyData {
   stats: Stats
   tier_info: TierInfo
 }
+
+export interface AnalysisStats {
+  summonerName: string;
+  baseStats: Stats;
+  assistRatio: number;
+  damageObjRatio: number;
+  damageTurretRatio: number;
+  damageSelfMitigatedRatio: number;
+  deathRatio: number;
+  goldRanking: number;
+  killRatio: number;
+  minionRatio: number;
+  neturalRatio: number;
+  neturalEnemyRatio: number;
+  neturalTeamRatio: number;
+  totalDamageToChampRatio: number;
+  totalDamageTakenRatio: number;
+  totalHealRatio: number;
+  turretKillRatio: number;
+  visionScoreRatio: number;
+  wardRatio: number;
+  wardKillRatio: number;
+  visionWardRatio: number;
+  damagePerGoldRanking: number;
+}
