@@ -1,8 +1,7 @@
 import { Axios, AxiosError } from "axios";
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
-import { AverageTierInfo, Game, GameMode, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
-
+import { AverageTierInfo, Game, GameMode, OpScoreTimeline, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
 const filterGamesByLatestSession = (games: Game[]) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
   const latestSession = [];
@@ -52,6 +51,95 @@ function analyseGame(games: Game[], summonerId: string): OpStatistic[] {
   }
   return statistics;
 };
+
+function parseMap(maps: Map<number, { win?: number, lose?: number }>[]): OpScoreTimelineStatistics[] {
+  const sumMap: { [second: number]: { winSum: number, winCount: number, loseSum: number, loseCount: number, totalSum: number, totalCount: number } } = {};
+
+  for (const map of maps) {
+    const entries = Array.from(map.entries());
+    for (const [second, placement] of entries) {
+      // Only consider intervals of 60 seconds
+      if (second % 60 === 0) {
+        if (!sumMap[second]) {
+          sumMap[second] = { winSum: 0, winCount: 0, loseSum: 0, loseCount: 0, totalSum: 0, totalCount: 0 };
+        }
+        if (placement.win !== undefined) {
+          sumMap[second].winSum += placement.win;
+          sumMap[second].winCount += 1;
+          sumMap[second].totalSum += placement.win;
+          sumMap[second].totalCount += 1;
+        }
+        if (placement.lose !== undefined) {
+          sumMap[second].loseSum += placement.lose;
+          sumMap[second].loseCount += 1;
+          sumMap[second].totalSum += placement.lose;
+          sumMap[second].totalCount += 1;
+        }
+      }
+    }
+  }
+
+  const result: OpScoreTimelineStatistics[] = [];
+  for (const second in sumMap) {
+    if (sumMap.hasOwnProperty(second)) {
+      const { winSum, winCount, loseSum, loseCount, totalSum, totalCount } = sumMap[second];
+      result.push({
+        second: Number(second),
+        winScore: winCount ? winSum / winCount : undefined,
+        winCount: winCount,
+        loseCount: loseCount,
+        totalCount: totalCount,
+        loseScore: loseCount ? loseSum / loseCount : undefined,
+        score: totalCount ? totalSum / totalCount : undefined
+      });
+    }
+  }
+
+  return result;
+}
+
+function analyseOpScoreTimeline(games: Game[], summonerId: string): OpScoreTimelineStatistics[] {
+  const gameTimeInfo = [];
+  for (const game of games) {
+    const rankingMap = new Map();
+    const player = game.participants.find(p => p.summoner?.summoner_id === summonerId);
+    if (!player) continue;
+
+    const opScoreTimeline = player.stats.op_score_timeline;
+
+    for (const { second, score } of opScoreTimeline) {
+      const scoresAtTime: number[] = [];
+
+      for (const participant of game.participants) {
+        const timelineEntry = participant.stats.op_score_timeline.find(entry => entry.second === second);
+        if (timelineEntry) {
+          if (!scoresAtTime.includes(timelineEntry.score)) {
+            scoresAtTime.push(timelineEntry.score);
+          }
+          
+        }
+      }
+
+      scoresAtTime.sort((a, b) => b - a);
+
+      const playerRank = scoresAtTime.indexOf(score) + 1;
+      const resultType = player.stats.result === "WIN" ? "win" : "lose";
+      
+      if (!rankingMap.has(second)) {
+        rankingMap.set(second, {});
+      }
+
+      const existingEntry = rankingMap.get(second);
+      if (existingEntry) {
+        existingEntry[resultType] = playerRank;
+        rankingMap.set(second, existingEntry);
+      }
+    }
+    gameTimeInfo.push(rankingMap);
+  }
+
+  return parseMap(gameTimeInfo);
+}
 
 function calculateTierWeight(tierInfo: AverageTierInfo, tierIndex: Record<Tier, number>) {
   if (
@@ -248,6 +336,7 @@ type GetDataParams = {
 type GetDataResult = {
   opSummary?: string;
   opStatistics?: OpStatistic[];
+  opTimeAverages?: OpScoreTimelineStatistics[];
   error?: string;
 }
 
@@ -291,6 +380,8 @@ export const getData = async ({
 
     const statistics: OpStatistic[] = analyseGame(games, summonerId);
 
+    const timeAverages = analyseOpScoreTimeline(games, summonerId);
+
     const averageWinOpScoreRank: string = calculateAverageRank(winningScoreRanks);
     const averageLoseOpScoreRank: string = calculateAverageRank(losingScoreRanks);
     const averageOpScoreRank: string = calculateAverageRank(opScoreRanks);
@@ -306,6 +397,7 @@ export const getData = async ({
     return {
       opSummary: `Average OP Rank: ${averageOpScoreRank}.\n${winning_index_dec}\n${losing_index_dec}\nAverage Tier: ${tier}`,
       opStatistics: statistics,
+      opTimeAverages: timeAverages
     };
   } catch (error) {
     console.error(error)

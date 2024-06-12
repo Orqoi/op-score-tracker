@@ -146,6 +146,16 @@ export interface OpScoreTimeline {
   score: number
 }
 
+export interface OpScoreTimelineStatistics {
+  second: number
+  winScore?: number
+  loseScore?: number
+  score?: number
+  winCount?: number
+  loseCount?: number
+  totalCount?: number
+}
+
 export interface OpScoreTimelineAnalysis {
   left: string
   right: string
