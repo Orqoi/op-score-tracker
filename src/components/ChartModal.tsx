@@ -39,6 +39,22 @@ type GroupedData = {
 };
 
 const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data, timeAverages }) => {
+  function calculateScoreFrequencies(statistics: OpStatistic[], result: ChartFilter) {
+    console.log(statistics)
+    let parsedData = statistics.filter(stat => stat.rank !== 0).map(stat => stat.rank);
+    if (result !== ChartFilter.ALL) {
+      parsedData = statistics.filter(stat => stat.result === result && stat.rank !== 0).map(stat => stat.rank)
+    }
+    const frequencyMap = parsedData.reduce((acc: { [key: string] : number }, num: number) => {
+      acc[num] = (acc[num] || 0) + 1;
+      return acc;
+  }, {});
+  
+    return Object.keys(frequencyMap).map(score => ({
+        score: Number(score),
+        frequency: frequencyMap[score]
+    }));
+  }
   const [selectedRankType, setSelectedRankType] = useState<ChartFilter>(ChartFilter.ALL);
 
   const handleButtonClick = (rankType: ChartFilter) => {
@@ -124,7 +140,6 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data, timeAv
         return `${formatTime(Number(payload[0]?.payload?.second))} - ${payload[0]?.payload?.totalCount} games`
     }          
   }
-
   const positionData = getChartData("position");
   const roleData = getChartData("role");
   // const positionRoleData = getChartData(
@@ -241,6 +256,24 @@ const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data, timeAv
             />
             {renderTimeline()}
           </LineChart>
+        </Box>
+        <Box mb={4} textAlign="center">
+          <Typography variant="h6" component="h2" pr={25} gutterBottom sx={{ color: 'grey', fontStyle: 'italic' }}>
+            Frequency - Op_Rank Chart
+          </Typography>
+          <BarChart width={1000} height={320} data={calculateScoreFrequencies(data, selectedRankType)}>
+            <CartesianGrid strokeDasharray="3 3" />
+            {renderXAxis("score")}
+            <YAxis />
+            <Tooltip />
+            <Legend
+              layout="vertical"
+              align="center"
+              verticalAlign="bottom"
+              wrapperStyle={{ paddingLeft: 20, paddingTop: 20 }}
+            />
+            <Bar dataKey="frequency" fill="#82ca9d" barSize="100%" />
+          </BarChart>
         </Box>
       </DialogContent>
       <DialogActions>
