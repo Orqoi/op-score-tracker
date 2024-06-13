@@ -289,7 +289,7 @@ function collectParticipantInfo(participant: Participant, teamStat: Team | undef
     baseStats: stats,
     position: participant.position,
     damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt_to_champions / stats.gold_earned : -1,
-    damagePerDeath: (partialStats.death != undefined) ? (stats.death == 0 ? 0 : (stats.total_damage_taken / stats.death)) : -1,
+    damagePerDeath: (partialStats.death != undefined) ? (stats.death == 0 ? stats.total_damage_taken : (stats.total_damage_taken / stats.death)) : -1,
   }
 }
 

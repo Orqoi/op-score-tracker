@@ -14,15 +14,26 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Tooltip,
 } from "@mui/material";
 import type { AnalysisStats, Stats } from "../types";
-import ChartSection from "./chart/ChartSection";
-
+import ChartSection from "./analysis/ChartSection";
+import PlayerTitle from "./analysis/PlayerTitle";
 type AnalysisModalProps = {
   open: boolean;
   handleClose: () => void;
   data: AnalysisStats[];
 }
+
+const labels = [
+    { name: 'NanJiao', label: 'MVP' },
+    { name: 'sugar rich money', label: 'Best Jungler' },
+    { name: 'A Drunk Koala', label: 'Best Mid' },
+    { name: 'BlazingHeat', label: 'Top ADC' },
+    { name: 'CXC9', label: 'Best Support' },
+  ];
+
+
 
 const positionOrder = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "Unknown"];
 const sortedPositionData = (data: AnalysisStats[]) => {
@@ -65,6 +76,7 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
     const sortedObjectDamage = createSortedStatsNumberData(data, "ObjectiveDamage", "damage_dealt_to_objectives");
     const sortedTurretDamage = createSortedStatsNumberData(data, "TurretDamage", "damage_dealt_to_turrets");
 
+
     // TODO: does self-mitigated include shields to teammates?
     const sortedHealAndShieldData = data.map((item) => ({
         name: item.summonerName,
@@ -82,6 +94,14 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
         DamageTakenPerDeath: item.damagePerDeath,
       })).sort((a, b) => a.DamageTakenPerDeath - b.DamageTakenPerDeath);
 
+      const labels = [
+        {'label': 'Value Fighter', 'name' : sortedDamagePerGoldData.length > 4 ? sortedDamagePerGoldData[4].name : ''},
+        {'label': 'Value Sandbag', 'name' : sortedDamagePerDeathData.length > 4 ? sortedDamagePerDeathData[4].name : ''},
+        {'label': 'Objectives only', 'name': sortedObjectDamage.length > 4 ? sortedObjectDamage[4].name : ''},
+        {'label': 'Bin Laden', 'name': sortedTurretDamage.length > 4 ? sortedTurretDamage[4].name : ''},
+        {'label': 'Doctor', 'name': sortedHealAndShieldData.length > 4 ? sortedHealAndShieldData[4].name : ''},
+    ];
+    
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
           <DialogTitle sx={{ color: '#1976d2', fontSize: 30, fontWeight: 'medium' }}>Analysis</DialogTitle>
@@ -92,7 +112,7 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
                 <TableHead>
                   <TableRow>
                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Summoner Name</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff' }}>Position</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff' }}>Titles</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Kda</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Minions</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Jungle</TableCell>
@@ -104,10 +124,14 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
                   {sortedPositionData(data).map((item) => (
                     <TableRow key={item.summonerName} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f1f1fa' }, fontSize: '14px', fontWeight: '500' }}>
                       <TableCell align="left" sx={{ padding: '10px 15px', alignItems: 'center', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>
+                        <Box display="flex">
                         <img src={getImagePath(item.championId)} alt={`Icon ${item.championId}`} width="32" height="32" style={{ marginRight: '8px' }} />
                         {item.summonerName}
-                    </TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.position || "Unknown"}</TableCell>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>
+                        <PlayerTitle labels={labels.filter(label => label.name === item.summonerName).map(label => label.label)} />
+                      </TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.minion_kill}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.neutral_minion_kill}</TableCell>
