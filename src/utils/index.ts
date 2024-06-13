@@ -1,7 +1,14 @@
 import { Axios, AxiosError } from "axios";
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
-import { AverageTierInfo, Game, GameMode, OpScoreTimeline, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
+import { AverageTierInfo, Game, GameMode, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
+import champs from "../constants/champs.json";
+
+const getChampionNameById = (id: string) : string => {
+  const data: { [key: string]: string } = champs;
+  return data[id];
+}
+
 const filterGamesByLatestSession = (games: Game[]) => {
   const THREE_HOURS = 3 * 60 * 60 * 1000
   const latestSession = [];
@@ -278,17 +285,11 @@ function collectParticipantInfo(participant: Participant, teamStat: Team | undef
   const stats = participant.stats;
   return {
     summonerName: participant.summoner.game_name,
+    championName: getChampionNameById(participant.champion_id.toString()),
     baseStats: stats,
     position: participant.position,
-    assistRatio: (partialStats.assist != undefined) ? stats.assist / partialStats.assist : -1,
-    damageObjRatio: (partialStats.damage_dealt_to_objectives != undefined) ? stats.damage_dealt_to_objectives / partialStats.damage_dealt_to_objectives : -1,
-    damageTurretRatio: (partialStats.damage_dealt_to_turrets != undefined) ? stats.damage_dealt_to_turrets / partialStats.damage_dealt_to_turrets : -1,
-    damageSelfMitigatedRatio: (partialStats.damage_self_mitigated != undefined) ? stats.damage_self_mitigated / partialStats.damage_self_mitigated : -1,
-    
-// temporary initialized to damage per gold
     damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt_to_champions / stats.gold_earned : -1,
     damagePerDeath: (partialStats.death != undefined) ? (stats.death == 0 ? 0 : (stats.total_damage_taken / stats.death)) : -1,
-    goldRanking: -1,
   }
 }
 

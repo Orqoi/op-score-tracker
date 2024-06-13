@@ -217,14 +217,9 @@ export interface MyData {
 
 export interface AnalysisStats {
   summonerName: string;
+  championName: string,
   baseStats: Stats;
-  assistRatio: number;
   position: string;
-  damageObjRatio: number;
-  damageTurretRatio: number;
-  damageSelfMitigatedRatio: number;
-  goldRanking: number;
-
   damagePerGold: number;
   damagePerDeath: number;
 }
