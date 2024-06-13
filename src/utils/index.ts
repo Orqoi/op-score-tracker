@@ -279,26 +279,15 @@ function collectParticipantInfo(participant: Participant, teamStat: Team | undef
   return {
     summonerName: participant.summoner.game_name,
     baseStats: stats,
+    position: participant.position,
     assistRatio: (partialStats.assist != undefined) ? stats.assist / partialStats.assist : -1,
     damageObjRatio: (partialStats.damage_dealt_to_objectives != undefined) ? stats.damage_dealt_to_objectives / partialStats.damage_dealt_to_objectives : -1,
     damageTurretRatio: (partialStats.damage_dealt_to_turrets != undefined) ? stats.damage_dealt_to_turrets / partialStats.damage_dealt_to_turrets : -1,
     damageSelfMitigatedRatio: (partialStats.damage_self_mitigated != undefined) ? stats.damage_self_mitigated / partialStats.damage_self_mitigated : -1,
-    deathRatio: (partialStats.death != undefined) ? stats.death / partialStats.death : -1,
-    killRatio: (partialStats.kill != undefined) ? stats.kill / partialStats.kill : -1,
-    minionRatio: (partialStats.minion_kill != undefined) ? stats.minion_kill / partialStats.minion_kill : -1,
-    neturalRatio: (partialStats.neutral_minion_kill != undefined) ? stats.neutral_minion_kill / partialStats.neutral_minion_kill : -1,
-    neturalEnemyRatio: (partialStats.neutral_minion_kill_enemy_jungle != undefined) ? stats.neutral_minion_kill_enemy_jungle / partialStats.neutral_minion_kill_enemy_jungle : -1,
-    neturalTeamRatio: (partialStats.neutral_minion_kill_team_jungle != undefined) ? stats.neutral_minion_kill_team_jungle / partialStats.neutral_minion_kill_team_jungle : -1,
-    totalDamageToChampRatio: (partialStats.total_damage_dealt_to_champions != undefined) ? stats.total_damage_dealt_to_champions / partialStats.total_damage_dealt_to_champions : -1,
-    totalDamageTakenRatio: (partialStats.total_damage_taken != undefined) ? stats.total_damage_taken / partialStats.total_damage_taken : -1,
-    totalHealRatio: (partialStats.total_heal != undefined) ? stats.total_heal / partialStats.total_heal : -1,
-    turretKillRatio: (partialStats.turret_kill != undefined) ? stats.turret_kill / partialStats.turret_kill : -1,
-    visionScoreRatio: (partialStats.vision_score != undefined) ? stats.vision_score / partialStats.vision_score : -1,
-    wardRatio: (partialStats.ward_place != undefined) ? stats.ward_place / partialStats.ward_place : -1,
-    wardKillRatio: (partialStats.ward_kill != undefined) ? stats.ward_kill / partialStats.ward_kill : -1,
-    visionWardRatio: (partialStats.vision_wards_bought_in_game != undefined) ? stats.vision_wards_bought_in_game / partialStats.vision_wards_bought_in_game : -1,
-    // temporary initialized to damage per gold
-    damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt / stats.gold_earned : -1,
+    
+// temporary initialized to damage per gold
+    damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt_to_champions / stats.gold_earned : -1,
+    damagePerDeath: (partialStats.death != undefined) ? (stats.death == 0 ? 0 : (stats.total_damage_taken / stats.death)) : -1,
     goldRanking: -1,
   }
 }
