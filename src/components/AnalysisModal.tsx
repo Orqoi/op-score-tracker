@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import type { AnalysisStats, Stats } from "../types";
 import ChartSection from "./chart/ChartSection";
+import { FormatBold } from "@mui/icons-material";
 
 type AnalysisModalProps = {
   open: boolean;
@@ -90,33 +91,30 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
           <DialogTitle sx={{ color: '#1976d2', fontSize: 30, fontWeight: 'medium' }}>Analysis</DialogTitle>
           <DialogContent>
-          <Box m={3} justifyContent="center">
-            <Typography color='#1976d2' variant="h6" gutterBottom>
-              Player Positions
-            </Typography>
+          <Box m={2} justifyContent="center">
             <TableContainer component={Paper}>
               <Table size="medium">
                 <TableHead>
                   <TableRow>
-                   <TableCell>Summoner Name</TableCell>
-                    <TableCell>Position</TableCell>
-                    <TableCell>Kda</TableCell>
-                    <TableCell>Minions</TableCell>
-                    <TableCell>Jungle</TableCell>
-                    <TableCell>Vision Score</TableCell>
-                    <TableCell>Pink</TableCell>
+                   <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Summoner Name</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff' }}>Position</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Kda</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Minions</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Jungle</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Vision Score</TableCell>
+                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Pink</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {sortedPositionData(data).map((item) => (
-                    <TableRow key={item.summonerName}>
-                      <TableCell>{item.summonerName}</TableCell>
-                      <TableCell>{item.position || "Unknown"}</TableCell>
-                      <TableCell>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
-                      <TableCell>{item.baseStats.minion_kill}</TableCell>
-                      <TableCell>{item.baseStats.neutral_minion_kill}</TableCell>
-                      <TableCell>{item.baseStats.vision_score}</TableCell>
-                      <TableCell>{item.baseStats.vision_wards_bought_in_game}</TableCell>
+                    <TableRow key={item.summonerName} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f1f1fa' }, fontSize: '14px', fontWeight: '500' }}>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>{item.summonerName}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.position || "Unknown"}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.minion_kill}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.neutral_minion_kill}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.vision_score}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.vision_wards_bought_in_game}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
