@@ -40,7 +40,6 @@ type GroupedData = {
 
 const ChartModal: React.FC<ChartModalProps> = ({ open, handleClose, data, timeAverages }) => {
   function calculateScoreFrequencies(statistics: OpStatistic[], result: ChartFilter) {
-    console.log(statistics)
     let parsedData = statistics.filter(stat => stat.rank !== 0).map(stat => stat.rank);
     if (result !== ChartFilter.ALL) {
       parsedData = statistics.filter(stat => stat.result === result && stat.rank !== 0).map(stat => stat.rank)

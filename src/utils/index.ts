@@ -2,7 +2,7 @@ import { Axios, AxiosError } from "axios";
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
 import { AverageTierInfo, Game, GameMode, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
-import champs from "../constants/champs.json";
+import champs from "../assets/champs.json";
 
 const getChampionNameById = (id: string) : string => {
   const data: { [key: string]: string } = champs;
@@ -234,7 +234,6 @@ export const analyseLatestGame = async (
       return [];
     }
     const latestGame: Game = games[0];
-    console.log(latestGame)
     const participants: Participant[] = latestGame.participants;
     const selfData: MyData = latestGame.myData
     const selfTeamKey = selfData.team_key;
@@ -285,6 +284,7 @@ function collectParticipantInfo(participant: Participant, teamStat: Team | undef
   const stats = participant.stats;
   return {
     summonerName: participant.summoner.game_name,
+    championId: participant.champion_id.toString(),
     championName: getChampionNameById(participant.champion_id.toString()),
     baseStats: stats,
     position: participant.position,

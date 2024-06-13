@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -15,30 +15,14 @@ import {
   TableRow,
   Paper,
 } from "@mui/material";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  LineChart,
-  Line,
-} from "recharts";
 import type { AnalysisStats, Stats } from "../types";
 import ChartSection from "./chart/ChartSection";
-import { FormatBold } from "@mui/icons-material";
 
 type AnalysisModalProps = {
   open: boolean;
   handleClose: () => void;
   data: AnalysisStats[];
 }
-
-const sortStatsData = (data: AnalysisStats[], key: keyof Stats) => {
-    return [...data].sort((a, b) => a.baseStats[key] - b.baseStats[key]);
-  };
 
 const positionOrder = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "Unknown"];
 const sortedPositionData = (data: AnalysisStats[]) => {
@@ -62,7 +46,18 @@ const sortedPositionData = (data: AnalysisStats[]) => {
       .sort((a, b) => (a[keyName] as number) - (b[keyName] as number));
   };
 
+  const getImagePath = (championId: string): string => {
+    try {
+        return `champion_icons/${championId}.png`;
+    } catch (error) {
+        console.error(`Error loading image for championId ${championId}:`, error);
+        return '';
+    }
+  };
+
+
 const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data }) => {  
+
 ``  // Sorted Stats Data
     const sortedDeathData = createSortedStatsNumberData(data, "Death", "death");
     const sortedGoldEarnedData = createSortedStatsNumberData(data, "GoldEarned", "gold_earned");
@@ -110,7 +105,10 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
                   {sortedPositionData(data).map((item) => (
                     <TableRow key={item.summonerName} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f1f1fa' }, fontSize: '14px', fontWeight: '500' }}>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>{item.summonerName}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.championName || "Unknown"}</TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>
+                      <img src={getImagePath(item.championId)} alt={`Icon ${item.championId}`} width="32" height="32" style={{ marginRight: '8px' }} />
+                        {item.championName || "Unknown"}
+                        </TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.position || "Unknown"}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.minion_kill}</TableCell>

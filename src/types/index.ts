@@ -217,6 +217,7 @@ export interface MyData {
 
 export interface AnalysisStats {
   summonerName: string;
+  championId: string;
   championName: string,
   baseStats: Stats;
   position: string;

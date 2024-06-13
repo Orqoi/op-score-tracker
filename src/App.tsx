@@ -55,7 +55,6 @@ function App() {
     const analysisStats = await analyseLatestGame(username,tag)
     setAnalysisStats(analysisStats);
     setOpenAnalysis(true);
-    console.log(analysisStats)
   }
 
   const handleAnalyzeClose = () => setOpenAnalysis(false);
