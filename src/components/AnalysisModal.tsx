@@ -92,7 +92,6 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
                 <TableHead>
                   <TableRow>
                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Summoner Name</TableCell>
-                   <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Champion</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff' }}>Position</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Kda</TableCell>
                     <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Minions</TableCell>
@@ -104,11 +103,10 @@ const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data 
                 <TableBody>
                   {sortedPositionData(data).map((item) => (
                     <TableRow key={item.summonerName} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f1f1fa' }, fontSize: '14px', fontWeight: '500' }}>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>{item.summonerName}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>
-                      <img src={getImagePath(item.championId)} alt={`Icon ${item.championId}`} width="32" height="32" style={{ marginRight: '8px' }} />
-                        {item.championName || "Unknown"}
-                        </TableCell>
+                      <TableCell align="left" sx={{ padding: '10px 15px', alignItems: 'center', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>
+                        <img src={getImagePath(item.championId)} alt={`Icon ${item.championId}`} width="32" height="32" style={{ marginRight: '8px' }} />
+                        {item.summonerName}
+                    </TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.position || "Unknown"}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
                       <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.minion_kill}</TableCell>
