@@ -7,8 +7,9 @@ export const fetchSummonerId = async (username: string, tag: string) => {
     return summonerResponse.data.summonerId;
 };
 
-export const fetchGames = async (summonerId: string, numGames: number, gameMode: GameMode) => {
-    let url = `${BASE_URL}/matches/${summonerId}?limit=20&hl=en_US`
+export const fetchGames = async (summonerId: string, numGames: number, gameMode: GameMode, limit : number = 20) => {
+    // The param limit is only useful when request games < 20
+    let url = `${BASE_URL}/matches/${summonerId}?limit=${limit}&hl=en_US`
     const allGames = [];
     if (gameMode) {
         url += `&game_type=${gameMode}`

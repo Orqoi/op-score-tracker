@@ -1,7 +1,7 @@
-import { Axios, AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { tierWeightList, tierIndex } from "../constants";
 import { fetchSummonerId, fetchGames, updateMatchHistory } from "../services";
-import { AverageTierInfo, Game, GameMode, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats } from "../types";
+import { AverageTierInfo, Game, GameMode, OpScoreTimelineStatistics, OpStatistic, Participant, MyData, Tier, TierWeightList, Team, Stats, AnalysisStats, GameStat } from "../types";
 import champs from "../assets/champs.json";
 
 const getChampionNameById = (id: string) : string => {
@@ -224,29 +224,38 @@ function processGames(games: Game[], summonerId: string, tierIndex: Record<Tier,
 export const analyseLatestGame = async (
    username: string,
    tag:string,
-) : Promise<AnalysisStats[]> => {
+) : Promise<AnalysisStats[][]> => {
   try {
     const summonerId = await fetchSummonerId(username, tag);
     await updateMatchHistory(summonerId);
     // Retrieve latest game regardless of game type
-    let games = await fetchGames(summonerId, 20, GameMode.Total);
+    let games = await fetchGames(summonerId, 1, GameMode.Total, 1);
     if (games.length === 0) {
       return [];
     }
     const latestGame: Game = games[0];
     const participants: Participant[] = latestGame.participants;
-    const selfData: MyData = latestGame.myData
-    const selfTeamKey = selfData.team_key;
-    const teamStat: Team | undefined = latestGame.teams.find((t) => t.key === selfTeamKey);
-    // TODO: Analyse the enemy team
-    const teammates: Participant[] = participants.filter((p) => p.team_key === selfTeamKey)
-    const partialStats: Partial<Stats> = sumStats(teammates);
-    let statistics = ""
-    let allAnaylsisStats: AnalysisStats[] = [];
-    teammates.forEach((teammate) => {
-      allAnaylsisStats.push(collectParticipantInfo(teammate, teamStat, partialStats))
+    let teamStatsList: AnalysisStats[] = [];
+    let enemyStatsList: AnalysisStats[] = [];
+    const teamKey = latestGame.myData.team_key;
+    const selfTeam = latestGame.teams.find(team => team.key === teamKey);
+    const enemyTeam = latestGame.teams.find(team => team.key !== teamKey);
+
+    const team_game_stat = selfTeam?.game_stat;
+    const enemy_game_stat = enemyTeam?.game_stat;
+    
+    const selfTeamTotal = sumStats(participants.filter(participant => participant.team_key === teamKey));
+    const enemyTeamTotal = sumStats(participants.filter(participant => participant.team_key !== teamKey));
+
+    participants.forEach((participant) => {
+      if (teamKey === participant.team_key) {
+        teamStatsList.push(collectParticipantInfo(participant, team_game_stat, latestGame.game_length_second, selfTeamTotal));
+      } else {
+        enemyStatsList.push(collectParticipantInfo(participant, enemy_game_stat, latestGame.game_length_second, enemyTeamTotal));
+      }
     });
-    return allAnaylsisStats;
+    
+    return [teamStatsList, enemyStatsList];
   } catch (error: unknown) {
     console.error(error);
     if (error instanceof AxiosError) {
@@ -258,40 +267,150 @@ export const analyseLatestGame = async (
   }
 }
 
-function sumStats(participants: Participant[]): Partial<Stats> {
-  const instances = participants.map((p) => p.stats);
-  const summedInstance: Partial<Stats> = {};
+interface TeamTotal {
+  "teamDamage": number,
+  "teamDamageTaken": number,
+  "teamHealnShield": number,
+  "teamCC": number,
+  "teamVision": number,
+  "teamTurretDamage": number,
+  "teamObjectiveDamage": number,
+  "lowestVisionScore": number,
+  "highestVisionScore": number,
+  "highestDeath": number,
+  "lowestTurretDamage": number,
+  "highestDamagePerDeath": number,
+  "lowestDamagePerDeath": number
+}
 
-  instances.forEach(instance => {
-    for (const key in instance) {
-      if (instance.hasOwnProperty(key)) {
-        const typedKey = key as keyof Stats;
-        if (typeof instance[typedKey] === 'number') {
-          if (!summedInstance[typedKey]) {
-            summedInstance[typedKey] = 0;
-          }
-          summedInstance[typedKey] = (summedInstance[typedKey] as number) + instance[typedKey];
-        }
-      }
+function sumStats(participants : Participant[]): TeamTotal {
+  let sums : TeamTotal = {"teamDamage": 0, "teamDamageTaken": 0, "teamHealnShield": 0,
+  "teamCC": 0, "teamVision": 0, "teamTurretDamage": 0, "teamObjectiveDamage": 0,
+"lowestVisionScore": 0, "highestVisionScore": 0, "highestDeath":0, "lowestTurretDamage": 0,
+"highestDamagePerDeath": 0, "lowestDamagePerDeath": 0}
+  let lowestVisionScore = Number.MAX_VALUE;
+  let highestVisionScore = 0;
+  let highestDeath = 0;
+  let lowestTurretDamage = Number.MAX_VALUE;
+  let highestDamagePerDeath = 0;
+  let lowestDamagePerDeath = Number.MAX_VALUE;
+  for (const participant of participants) {
+    const stats = participant.stats;
+    sums["teamDamage"] += stats.total_damage_dealt_to_champions;
+    sums["teamDamageTaken"] += stats.total_damage_taken;
+    sums["teamHealnShield"] += stats.total_heal + stats.damage_self_mitigated;
+    sums["teamCC"] += stats.time_ccing_others;
+    sums["teamVision"] += stats.vision_score;
+    sums["teamTurretDamage"] += stats.damage_dealt_to_turrets;
+    sums["teamObjectiveDamage"] += stats.damage_dealt_to_objectives;
+
+    if (stats.vision_score < lowestVisionScore) {
+      lowestVisionScore = stats.vision_score;
     }
-  });
+    if (stats.vision_score > highestVisionScore) {
+      highestVisionScore = stats.vision_score;
+    }
+    if (stats.death > highestDeath) {
+      highestDeath = stats.death;
+    }
+    if (stats.damage_dealt_to_turrets < lowestTurretDamage) {
+      lowestTurretDamage = stats.damage_dealt_to_turrets;
+    }
 
-  return summedInstance;
+    const damagePerDeath = stats.death == 0 ? stats.total_damage_taken : (stats.total_damage_taken / stats.death);
+    if (damagePerDeath > highestDamagePerDeath) {
+      highestDamagePerDeath = damagePerDeath;
+    }
+    if (damagePerDeath < lowestDamagePerDeath) {
+      lowestDamagePerDeath = damagePerDeath;
+    }
+  }
+
+  sums["lowestVisionScore"] = lowestVisionScore;
+  sums["highestVisionScore"] = highestVisionScore;
+  sums["highestDeath"] = highestDeath;
+  sums["lowestTurretDamage"] = lowestTurretDamage;
+  sums["highestDamagePerDeath"] = highestDamagePerDeath;
+  sums["lowestDamagePerDeath"] = lowestDamagePerDeath;
+
+  return sums;
 }
 
 
-function collectParticipantInfo(participant: Participant, teamStat: Team | undefined, partialStats: Partial<Stats>) : AnalysisStats {
+function collectParticipantInfo(participant: Participant, teamStat : GameStat | undefined, gameLength : number, teamTotal: TeamTotal) : AnalysisStats {
   const stats = participant.stats;
+
+  // Metrics
+  const damagePerGold = stats.gold_earned == 0 ? stats.total_damage_dealt_to_champions : (stats.total_damage_dealt_to_champions / stats.gold_earned);
+  const damagePerDeath = stats.death == 0 ? stats.total_damage_taken : (stats.total_damage_taken / stats.death);
+  const killParticipation = teamStat ? (teamStat.champion_kill == 0 ? -1 : (stats.kill + stats.assist) / teamStat.champion_kill) : 0;
+  const damageProportion = teamTotal.teamDamage == 0 ? -1 : stats.total_damage_dealt_to_champions / teamTotal.teamDamage;
+  const turretProportion = teamTotal.teamTurretDamage == 0 ? -1 : stats.damage_dealt_to_turrets / teamTotal.teamTurretDamage;
+  const objectiveProportion = teamTotal.teamObjectiveDamage == 0 ? -1 : stats.damage_dealt_to_objectives / teamTotal.teamObjectiveDamage;
+
+  // Current Game Time criteria:
+  //  0 - Gametime < 12min (not counted), 1 - 10min <= 16min
+  //  2 - 16min <= 21min, 3 -  21min <= 30min 
+  //  4 - > 30min <= 40min, 5 - > 40min (late-late)
+  const gameTimeCategory = gameLength < 720 ? 0 :
+  (gameLength <= 960 ? 1 
+    : (gameLength <= 1260 ? 2 
+      : (gameLength <= 1800 ? 3 
+        : (gameLength <= 2400 ? 4 : 5))));
+
+  // Pigeon (KP + Damage proportion < 0.35 max.2) -> avr kp & dmg proportion is less than 20%
+  // 1. damage proportion to neglect unlucky case 2. kp to not assign pigeon to support
+  const pigeon = gameTimeCategory > 0 && killParticipation != -1 && damageProportion != -1 && (killParticipation + damageProportion) < 0.4;
+  
+  // Turret Allergy - (less than 2 hits of aa, approximately 200 damage to turret)
+  const turretAllergy = gameTimeCategory >= 1 && teamTotal.teamTurretDamage != 0 && stats.damage_dealt_to_turrets < 200;
+
+  // Blind: Vision Score - 1 per min ward lasted for ward placed / 1 per min lifetime left for ward kill
+  // Time 0: player get 1 ward charge, at ~3:20 2nd charge, at ~6:10 3rd charge, at ~9:10 4th charge
+  // Sight ward - recharge 2 - recharge-time 210 - 120 by level Last -90-120s
+  // Sweep - recharge 2 - recharge-time 160 - 100 by level - each level decrease by ~3.5
+  // Trinket - Farsight - TODO: VS calculation?  
+  // 1. >= 2, 2. >= 5  3. >= 9 4. >= 15 5. >= 20 (Bare minimum experimental, need more samples)
+  let blind = false
+  if (teamTotal.teamVision != 0 && gameTimeCategory > 0 && 
+    stats.vision_score == teamTotal.lowestVisionScore) {
+      blind = true ? (gameTimeCategory == 1 && stats.vision_score < 3)
+      || (gameTimeCategory == 2 && stats.vision_score < 6)
+      || (gameTimeCategory == 3 && stats.vision_score < 10)
+      || (gameTimeCategory == 4 && stats.vision_score < 15)
+      || (gameTimeCategory == 5 && stats.vision_score < 21)
+      : false;
+  }
+
+  // Sleep
+  // Low kill participation, low damage proportions, low turret damage porportion, low objective damage proportion
+  // (4 metrics, max at 1., total <= 0.5 would mean a player approximate contribution to the game < 12.5% in the game)
+  const asWellSleep = gameTimeCategory > 0 && killParticipation != -1 && damageProportion != -1 && turretProportion != -1 && objectiveProportion != -1
+    && (killParticipation + damageProportion + turretProportion + objectiveProportion <= 0.5);
+
+
+  // Complacent
+  const complacent = gameTimeCategory > 0 && stats.death === teamTotal.highestDeath && damagePerDeath === teamTotal.lowestDamagePerDeath;
+
+
   return {
     summonerName: participant.summoner.game_name,
     championId: participant.champion_id.toString(),
     championName: getChampionNameById(participant.champion_id.toString()),
+    teamKey: participant.team_key,
     baseStats: stats,
     position: participant.position,
-    damagePerGold: (partialStats.gold_earned != undefined) ? stats.total_damage_dealt_to_champions / stats.gold_earned : -1,
-    damagePerDeath: (partialStats.death != undefined) ? (stats.death == 0 ? stats.total_damage_taken : (stats.total_damage_taken / stats.death)) : -1,
+    damagePerGold: damagePerGold,
+    damagePerDeath: damagePerDeath,
+    gameLength: gameLength / 60,
+    isBlind: blind,
+    pigeon: pigeon,
+    mightAsWellSleep: asWellSleep,
+    complacent: complacent,
+    turretAllergy: turretAllergy,
   }
 }
+
 
 type GetDataParams = {
   username: string;
@@ -323,7 +442,6 @@ export const getData = async ({
     if (recencyFilter) {
       games = filterGamesByLatestSession(games);
     }
-
     if (games.length === 0) {
       return {
         error: "No games played"

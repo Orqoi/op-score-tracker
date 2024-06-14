@@ -15,6 +15,7 @@ import SelectInput from "./components/SelectInput";
 import InputField from "./components/InputField";
 import ChartModal from "./components/ChartModal";
 import AnalysisModal from "./components/AnalysisModal";
+import { processAnalysisData,  processTitles } from "./utils/statProcess";
 import { gameModeOptions, numGamesOptions } from "./constants";
 import type { GameMode, OpScoreTimelineStatistics, OpStatistic, AnalysisStats } from "./types";
 
@@ -31,7 +32,14 @@ function App() {
   const [statistics, setStatistics] = useState<OpStatistic[]>([]);
   const [timeAverages, setTimeAverages] = useState<OpScoreTimelineStatistics[]>([]);
   const [openAnalysis, setOpenAnalysis] = useState(false);
-  const [analysisStats, setAnalysisStats] = useState([] as AnalysisStats[]);
+
+  // Analysis stats
+  const [teamData, setTeamData] = useState<AnalysisStats[][]>([]);
+  const [analysisStats, setAnalysisStats] = useState({} as {[x:string]: {
+    [x: string]: string | number;
+    name: string;
+}[]});
+  const [titles, setPlayerTitles] = useState({} as {[x:string]: string}[]);
 
   
   const handleSearch = async () => {
@@ -51,9 +59,14 @@ function App() {
 
   const handleOpenChart = () => setOpenChart(true);
   const handleCloseChart = () => setOpenChart(false);
+
   const handleAnalyze = async () => {
-    const analysisStats = await analyseLatestGame(username,tag)
-    setAnalysisStats(analysisStats);
+    const teamData = await analyseLatestGame(username,tag)
+    setTeamData(teamData);
+    const analysisData = await processAnalysisData(teamData);
+    setAnalysisStats(analysisData);
+    const titles = await processTitles(teamData, analysisData);
+    setPlayerTitles(titles);
     setOpenAnalysis(true);
   }
 
@@ -187,7 +200,9 @@ function App() {
       <AnalysisModal
         open={openAnalysis}
         handleClose={handleAnalyzeClose}
+        teamData={teamData}
         data={analysisStats}
+        titles={titles}
       />
     </Box>
   );

@@ -223,4 +223,12 @@ export interface AnalysisStats {
   position: string;
   damagePerGold: number;
   damagePerDeath: number;
+  teamKey: string;
+  gameLength: number;
+
+  isBlind: boolean;
+  pigeon: boolean;
+  turretAllergy: boolean;
+  mightAsWellSleep: boolean;
+  complacent: boolean;
 }

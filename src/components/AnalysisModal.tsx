@@ -4,208 +4,133 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tabs, Tab,
   Button,
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Tooltip,
 } from "@mui/material";
+import { useState } from "react";
 import type { AnalysisStats, Stats } from "../types";
 import ChartSection from "./analysis/ChartSection";
-import PlayerTitle from "./analysis/PlayerTitle";
+import { TeamTable } from "./analysis/TeamTable";
 type AnalysisModalProps = {
   open: boolean;
   handleClose: () => void;
-  data: AnalysisStats[];
+  teamData: AnalysisStats[][];
+  data: {[x:string]: {
+    [x: string]: string | number;
+    name: string;
+}[]};
+  titles: {[x:string]: string}[];
 }
 
-const labels = [
-    { name: 'NanJiao', label: 'MVP' },
-    { name: 'sugar rich money', label: 'Best Jungler' },
-    { name: 'A Drunk Koala', label: 'Best Mid' },
-    { name: 'BlazingHeat', label: 'Top ADC' },
-    { name: 'CXC9', label: 'Best Support' },
-  ];
+const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, teamData, data, titles }) => {
+    const [selectedTab, setSelectedTab] = useState(0);
+    const ownTeamData = teamData[0] ?? [];
+    const enemyData = teamData[1] ?? [];
+    // Sorted Stats Data
+    const sortedDeathData = data?.sortedDeathData ?? [];
+    const sortedGoldEarnedData = data?.sortedGoldEarnedData ?? [];
+    const sortedCCData = data?.sortedCCData ?? [];
+    const sortedObjectDamage = data?.sortedObjectDamage ?? [];
+    const sortedTurretDamage = data?.sortedTurretDamage ?? [];
+    const sortedHealAndShieldData = data?.sortedHealAndShieldData ?? [];
+    const sortedDamagePerGoldData = data?.sortedDamagePerGoldData ?? [];
+    const sortedDamagePerDeathData = data?.sortedDamagePerDeathData ?? [];
 
+    const handleTabChange = (event:any, newValue:number) => {
+        setSelectedTab(newValue);
+    };
 
-
-const positionOrder = ["TOP", "JUNGLE", "MID", "ADC", "SUPPORT", "Unknown"];
-const sortedPositionData = (data: AnalysisStats[]) => {
-    return [...data].sort((a, b) => {
-      const posA = a.position || "Unknown";
-      const posB = b.position || "Unknown";
-      return positionOrder.indexOf(posA) - positionOrder.indexOf(posB);
-    });
-  };
-
-  const createSortedStatsNumberData = <T extends keyof Stats>(
-    data: AnalysisStats[],
-    keyName: string,
-    key: T
-  ) => {
-    return data
-      .map((item) => ({
-        name: item.summonerName,
-        [keyName]: item.baseStats[key],
-      }))
-      .sort((a, b) => (a[keyName] as number) - (b[keyName] as number));
-  };
-
-  const getImagePath = (championId: string): string => {
-    try {
-        return `champion_icons/${championId}.png`;
-    } catch (error) {
-        console.error(`Error loading image for championId ${championId}:`, error);
-        return '';
-    }
-  };
-
-
-const AnalysisModal : React.FC<AnalysisModalProps> = ({ open, handleClose, data }) => {  
-
-``  // Sorted Stats Data
-    const sortedDeathData = createSortedStatsNumberData(data, "Death", "death");
-    const sortedGoldEarnedData = createSortedStatsNumberData(data, "GoldEarned", "gold_earned");
-    const sortedCCData = createSortedStatsNumberData(data, "CcTime", "time_ccing_others");
-    const sortedObjectDamage = createSortedStatsNumberData(data, "ObjectiveDamage", "damage_dealt_to_objectives");
-    const sortedTurretDamage = createSortedStatsNumberData(data, "TurretDamage", "damage_dealt_to_turrets");
-
-
-    // TODO: does self-mitigated include shields to teammates?
-    const sortedHealAndShieldData = data.map((item) => ({
-        name: item.summonerName,
-        HealnShield: item.baseStats.total_heal + item.baseStats.damage_self_mitigated,
-      })).sort((a, b) => a.HealnShield - b.HealnShield);
-
-    // Sorted Analysis data
-      const sortedDamagePerGoldData = data.map((item) => ({
-        name: item.summonerName,
-        DamagePerGold: item.damagePerGold,
-      })).sort((a, b) => a.DamagePerGold - b.DamagePerGold);
-
-      const sortedDamagePerDeathData = data.map((item) => ({
-        name: item.summonerName,
-        DamageTakenPerDeath: item.damagePerDeath,
-      })).sort((a, b) => a.DamageTakenPerDeath - b.DamageTakenPerDeath);
-
-      const labels = [
-        {'label': 'Value Fighter', 'name' : sortedDamagePerGoldData.length > 4 ? sortedDamagePerGoldData[4].name : ''},
-        {'label': 'Value Sandbag', 'name' : sortedDamagePerDeathData.length > 4 ? sortedDamagePerDeathData[4].name : ''},
-        {'label': 'Objectives only', 'name': sortedObjectDamage.length > 4 ? sortedObjectDamage[4].name : ''},
-        {'label': 'Bin Laden', 'name': sortedTurretDamage.length > 4 ? sortedTurretDamage[4].name : ''},
-        {'label': 'Doctor', 'name': sortedHealAndShieldData.length > 4 ? sortedHealAndShieldData[4].name : ''},
-    ];
-    
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
-          <DialogTitle sx={{ color: '#1976d2', fontSize: 30, fontWeight: 'medium' }}>Analysis</DialogTitle>
+          <DialogTitle sx={{ color: '#1976d2', fontSize: 0, fontWeight: 'bold' }}>Analysis</DialogTitle>
           <DialogContent>
-          <Box m={2} justifyContent="center">
-            <TableContainer component={Paper}>
-              <Table size="medium">
-                <TableHead>
-                  <TableRow>
-                   <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Summoner Name</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff' }}>Titles</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Kda</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Minions</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Jungle</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Vision Score</TableCell>
-                    <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '16px', fontWeight: 'bold', backgroundColor: '#1976d2', color: '#fff'  }}>Pink</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sortedPositionData(data).map((item) => (
-                    <TableRow key={item.summonerName} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#f1f1fa' }, fontSize: '14px', fontWeight: '500' }}>
-                      <TableCell align="left" sx={{ padding: '10px 15px', alignItems: 'center', fontSize: '14px', fontWeight: '600', fontFamily: 'revert'}}>
-                        <Box display="flex">
-                        <img src={getImagePath(item.championId)} alt={`Icon ${item.championId}`} width="32" height="32" style={{ marginRight: '8px' }} />
-                        {item.summonerName}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>
-                        <PlayerTitle labels={labels.filter(label => label.name === item.summonerName).map(label => label.label)} />
-                      </TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{`${item.baseStats.kill}/${item.baseStats.death}/${item.baseStats.assist}`}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.minion_kill}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.neutral_minion_kill}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.vision_score}</TableCell>
-                      <TableCell align="left" sx={{ padding: '10px 15px', fontSize: '14px', fontWeight: '500' }}>{item.baseStats.vision_wards_bought_in_game}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-           {/* Gold & damage per gold */}
-            <Box display="flex" height="70%" justifyContent="space-between">
+            <Tabs value={selectedTab} onChange={handleTabChange}>
+                <Tab label="Summary" sx={{ fontWeight: 'bold', fontSize: '17px' }} />
+                <Tab label="Charts" sx={{ fontWeight: 'bold', fontSize: '17px' }} />
+             </Tabs>
+            {selectedTab === 0 && (
+                <Box>
+                    <Typography sx={{ color: '#1976d2', fontSize: 24, fontWeight: 'bold', mb:1 }}>Summary</Typography>
+                    <TeamTable 
+                    data={ownTeamData}
+                    titles={titles}
+                    color="#1976d2" 
+                    />
+                    <TeamTable 
+                    data={enemyData}
+                    titles={[]}
+                    color="#e60000"
+                    />
+                </Box>
+            )}
+           
+            {selectedTab === 1 && (
+            <Box>
+                <Typography sx={{ color: '#1976d2', fontSize: 24, fontWeight: 'bold', mb:2 }}>Charts</Typography>
+                {/* Gold & damage per gold */}
+                <Box display="flex" height="70%" justifyContent="space-between">
                 <ChartSection
                     title="Gold Earned"
-                    data={sortedGoldEarnedData}
+                    data={sortedGoldEarnedData ?? []}
                     dataKey="GoldEarned"
                     color="#8884d8"
                 />
                 <ChartSection
                     title="Damage Per Gold"
-                    data={sortedDamagePerGoldData}
+                    data={sortedDamagePerGoldData ?? []}
                     dataKey="DamagePerGold"
                     color="#82ca9d"
                 />
-            </Box>
-
-            {/* death & damage taken per death */}
-            <Box display="flex" height="70%" justifyContent="space-between">
+                </Box>
+                {/* death & damage taken per death */}
+                <Box display="flex" height="70%" justifyContent="space-between">
                 <ChartSection
                     title="Death"
-                    data={sortedDeathData}
+                    data={sortedDeathData ?? []}
                     dataKey="Death"
                     color="#8884d8"
                 />
                 <ChartSection
                     title="Damage Taken Per Death"
-                    data={sortedDamagePerDeathData}
+                    data={sortedDamagePerDeathData ?? []}
                     dataKey="DamageTakenPerDeath"
                     color="#82ca9d"
                 />
-            </Box>
-        
-            {/*  Heals-Shields & CC */}
-            <Box display="flex" height="70%" justifyContent="space-between">
+                </Box>
+                {/* Heals-Shields & CC */}
+                <Box display="flex" height="70%" justifyContent="space-between">
                 <ChartSection
                     title="Heal & Shields"
-                    data={sortedHealAndShieldData}
+                    data={sortedHealAndShieldData ?? []}
                     dataKey="HealnShield"
                     color="#8884d8"
                 />
                 <ChartSection
                     title="Total CC Time to Enemy"
-                    data={sortedCCData}
+                    data={sortedCCData ?? []}
                     dataKey="CcTime"
                     color="#82ca9d"
                 />
-            </Box>
-            
-            {/*  Objectives damage & turret kill */}
-            <Box display="flex" height="70%" justifyContent="space-between">
-                  <ChartSection
+                </Box>
+                {/* Objectives damage & turret kill */}
+                <Box display="flex" height="70%" justifyContent="space-between">
+                <ChartSection
                     title="Damage Dealt to Objectives"
-                    data={sortedObjectDamage}
+                    data={sortedObjectDamage ?? []}
                     dataKey="ObjectiveDamage"
                     color="#8884d8"
-                  />
-                  <ChartSection
+                />
+                <ChartSection
                     title="Damage to Turret"
-                    data={sortedTurretDamage}
+                    data={sortedTurretDamage ?? []}
                     dataKey="TurretDamage"
                     color="#82ca9d"
-                  />
+                />
+                </Box>
             </Box>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} color="primary">

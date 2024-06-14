@@ -49,8 +49,8 @@ app.post("/summoner/:summonerId/renewal", async (req, res) => {
 
 app.get("/matches/:summonerId", async (req, res) => {
   const { summonerId } = req.params;
-  const { ended_at, game_type } = req.query;
-  let matchHistoryUrl = `https://lol-web-api.op.gg/api/v1.0/internal/bypass/games/sg/summoners/${summonerId}?&limit=20&hl=en_US`;
+  const { ended_at, game_type, limit } = req.query;
+  let matchHistoryUrl = `https://lol-web-api.op.gg/api/v1.0/internal/bypass/games/sg/summoners/${summonerId}?&limit=${limit}&hl=en_US`;
   if (ended_at) {
     matchHistoryUrl += `&ended_at=${encodeURIComponent(String(ended_at))}`;
   }
